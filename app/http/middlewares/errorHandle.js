@@ -8,7 +8,7 @@ module.exports = (ctx, next) => {
             ctx.render(
                 {
                     text: 'Validation failed',
-                    body: {
+                    data: {
                         errors: validationErrorSerializer.serialize(error.errors),
                     },
                 },

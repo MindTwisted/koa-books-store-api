@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon -L app/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "./node_modules/.bin/eslint ./app/**/*",
-    "lint:fix": "./node_modules/.bin/eslint ./app/**/* --fix"
+    "start": "nodemon -L app/server.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "lint": "./node_modules/.bin/eslint ./app/**/* ./test/**/*",
+    "lint:fix": "./node_modules/.bin/eslint ./app/**/* ./test/**/* --fix"
   },
   "author": "",
   "license": "ISC",
@@ -16,7 +16,10 @@
     "dotenv": "^7.0.0",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-jest": "^22.4.1",
     "eslint-plugin-prettier": "^3.0.1",
+    "faker": "^4.1.0",
+    "jest": "^24.7.1",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
     "koa-router": "^7.4.0",
@@ -25,6 +28,7 @@
     "mongoose-unique-validator": "^2.0.2",
     "nodemon": "^1.18.10",
     "prettier": "^1.16.4",
+    "supertest": "^4.0.2",
     "validator": "^10.11.0"
   },
   "_moduleAliases": {
@@ -36,5 +40,18 @@
     "@models": "./app/database/models",
     "@serializers": "./app/serializers",
     "@views": "./app/views"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "@root/(.*)": "<rootDir>/$1",
+      "@routes/(.*)": "<rootDir>/app/http/routes/$1",
+      "@middlewares/(.*)": "<rootDir>/app/http/middlewares/$1",
+      "@controllers/(.*)": "<rootDir>/app/http/controllers/$1",
+      "@database/(.*)": "<rootDir>/app/database/$1",
+      "@models/(.*)": "<rootDir>/app/database/models/$1",
+      "@serializers/(.*)": "<rootDir>/app/serializers/$1",
+      "@views/(.*)": "<rootDir>/app/views/$1"
+    }
   }
 }

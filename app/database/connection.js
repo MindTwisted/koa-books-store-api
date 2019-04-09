@@ -10,9 +10,14 @@ const connect = () => {
     });
 };
 
-const connection = async () => {
-    await connect();
+const makeConnection = async () => {
+    const connection = await connect();
+
     await Promise.all([User.init()]);
+
+    return connection;
 };
+
+const connection = makeConnection();
 
 module.exports = connection;
