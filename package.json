@@ -1,0 +1,40 @@
+{
+  "name": "koa-books-store-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon -L app/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "./node_modules/.bin/eslint ./app/**/*",
+    "lint:fix": "./node_modules/.bin/eslint ./app/**/* --fix"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^3.0.5",
+    "dotenv": "^7.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "koa": "^2.7.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-router": "^7.4.0",
+    "module-alias": "^2.2.0",
+    "mongoose": "^5.4.21",
+    "mongoose-unique-validator": "^2.0.2",
+    "nodemon": "^1.18.10",
+    "prettier": "^1.16.4",
+    "validator": "^10.11.0"
+  },
+  "_moduleAliases": {
+    "@root": ".",
+    "@routes": "./app/http/routes",
+    "@controllers": "./app/http/controllers",
+    "@middlewares": "./app/http/middlewares",
+    "@database": "./app/database",
+    "@models": "./app/database/models",
+    "@serializers": "./app/serializers",
+    "@views": "./app/views"
+  }
+}
