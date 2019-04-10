@@ -1,7 +1,7 @@
 const validationErrorSerializer = require('@serializers/validationError');
 
 module.exports = (ctx, next) => {
-    const error = ctx.error;
+    const error = ctx.state.error;
 
     switch (error.name) {
         case 'ValidationError':

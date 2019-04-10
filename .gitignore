@@ -1,1 +1,9 @@
+# vendor files
 node_modules
+
+# vs code settings
+.vscode
+
+# security keys
+private.key
+public.key

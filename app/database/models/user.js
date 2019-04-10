@@ -41,11 +41,13 @@ const userSchema = mongoose.Schema(
     {
         timestamps: true,
         toJSON: {
+            virtuals: true,
             transform(doc, ret) {
                 delete ret.password;
                 delete ret.createdAt;
                 delete ret.updatedAt;
                 delete ret.__v;
+                delete ret._id;
 
                 return ret;
             },
@@ -64,6 +66,12 @@ userSchema.pre('save', async function(next) {
 
     return next();
 });
+
+userSchema.methods.isValidPassword = async function(password) {
+    const compare = await bcrypt.compare(password, this.password);
+
+    return compare;
+};
 
 const User = mongoose.model('user', userSchema);
 

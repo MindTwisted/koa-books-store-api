@@ -123,3 +123,83 @@ describe(`POST ${AUTH_URL}`, () => {
         done();
     });
 });
+
+describe(`PUT ${AUTH_URL}`, () => {
+    test('user can login with valid data', async done => {
+        const name = faker.random.alphaNumeric(6);
+        const email = faker.internet.email();
+        const password = faker.random.alphaNumeric(6);
+
+        await server.post(`${AUTH_URL}`).send({
+            name,
+            email,
+            password,
+        });
+
+        const res = await server.put(`${AUTH_URL}`).send({
+            email,
+            password,
+        });
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data.user.name).toBe(name);
+        expect(res.body.data.user.email).toBe(email);
+        expect(res.body.data).toHaveProperty('token');
+
+        done();
+    });
+
+    test('user can not login without email and password', async done => {
+        const res = await server.put(`${AUTH_URL}`).send({});
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not login with invalid email', async done => {
+        const name = faker.random.alphaNumeric(6);
+        const email = faker.internet.email();
+        const password = faker.random.alphaNumeric(6);
+
+        await server.post(`${AUTH_URL}`).send({
+            name,
+            email,
+            password,
+        });
+
+        const res = await server.put(`${AUTH_URL}`).send({
+            email: faker.internet.email(),
+            password,
+        });
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not login with invalid password', async done => {
+        const name = faker.random.alphaNumeric(6);
+        const email = faker.internet.email();
+        const password = faker.random.alphaNumeric(6);
+
+        await server.post(`${AUTH_URL}`).send({
+            name,
+            email,
+            password,
+        });
+
+        const res = await server.put(`${AUTH_URL}`).send({
+            email,
+            password: faker.random.alphaNumeric(6),
+        });
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
