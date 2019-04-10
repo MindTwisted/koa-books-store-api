@@ -1,29 +1,31 @@
 const validationErrorSerializer = require('@serializers/validationError');
 
-module.exports = (ctx, next) => {
-    const error = ctx.state.error;
-
-    switch (error.name) {
-        case 'ValidationError':
-            ctx.render(
-                {
-                    text: 'Validation failed',
-                    data: {
-                        errors: validationErrorSerializer.serialize(error.errors),
+module.exports = async (ctx, next) => {
+    try {
+        await next();
+    } catch (error) {
+        switch (error.name) {
+            case 'ValidationError':
+                return ctx.render(
+                    {
+                        text: 'Validation failed',
+                        data: {
+                            errors: validationErrorSerializer.serialize(error.errors),
+                        },
                     },
-                },
-                422,
-            );
-
-            return next();
-        default:
-            ctx.render(
-                {
-                    text: 'Unexpected error occurred.',
-                },
-                500,
-            );
-
-            return next();
+                    422,
+                );
+            case 'UnauthorizedError':
+                return ctx.render({ text: error.message }, 401);
+            case 'LoginError':
+                return ctx.render({ text: error.message }, 403);
+            default:
+                return ctx.render(
+                    {
+                        text: 'Unexpected error occurred.',
+                    },
+                    500,
+                );
+        }
     }
 };

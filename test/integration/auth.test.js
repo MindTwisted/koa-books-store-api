@@ -203,3 +203,50 @@ describe(`PUT ${AUTH_URL}`, () => {
         done();
     });
 });
+
+describe(`GET ${AUTH_URL}`, () => {
+    test('user can get current auth info if provide valid token', async done => {
+        const name = faker.random.alphaNumeric(6);
+        const email = faker.internet.email();
+        const password = faker.random.alphaNumeric(6);
+
+        await server.post(`${AUTH_URL}`).send({
+            name,
+            email,
+            password,
+        });
+
+        const loginRes = await server.put(`${AUTH_URL}`).send({
+            email,
+            password,
+        });
+        const token = loginRes.body.data.token;
+        const res = await server.get(`${AUTH_URL}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data.user.name).toBe(name);
+        expect(res.body.data.user.email).toBe(email);
+
+        done();
+    });
+
+    test('user can not get current auth info without token', async done => {
+        const res = await server.get(`${AUTH_URL}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not get current auth info if provide invalid token', async done => {
+        const token = faker.random.alphaNumeric(20);
+        const res = await server.get(`${AUTH_URL}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});

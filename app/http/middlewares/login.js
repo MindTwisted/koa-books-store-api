@@ -1,35 +1,30 @@
 const User = require('@models/user');
 const jwtService = require('@services/jwt');
+const LoginError = require('@errors/LoginError');
 
 module.exports = async (ctx, next) => {
     const { email, password } = ctx.request.body;
 
     if (!(email && password)) {
-        return next();
+        throw new LoginError('Invalid credentials.');
     }
 
-    try {
-        const user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-        if (!user) {
-            return next();
-        }
-
-        const isValidPassword = await user.isValidPassword(password);
-
-        if (!isValidPassword) {
-            return next();
-        }
-
-        const token = jwtService.sign({ user });
-
-        ctx.state.user = user;
-        ctx.state.token = token;
-
-        return next();
-    } catch (e) {
-        ctx.state.error = e;
-
-        return next();
+    if (!user) {
+        throw new LoginError('Invalid credentials.');
     }
+
+    const isValidPassword = await user.isValidPassword(password);
+
+    if (!isValidPassword) {
+        throw new LoginError('Invalid credentials.');
+    }
+
+    const token = jwtService.sign({ user });
+
+    ctx.state.user = user;
+    ctx.state.token = token;
+
+    return next();
 };

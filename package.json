@@ -44,6 +44,7 @@
     "@models": "./app/database/models",
     "@serializers": "./app/serializers",
     "@services": "./app/services",
+    "@errors": "./app/errors",
     "@views": "./app/views"
   },
   "jest": {
@@ -57,6 +58,7 @@
       "@models/(.*)": "<rootDir>/app/database/models/$1",
       "@serializers/(.*)": "<rootDir>/app/serializers/$1",
       "@services/(.*)": "<rootDir>/app/services/$1",
+      "@errors/(.*)": "<rootDir>/app/errors/$1",
       "@views/(.*)": "<rootDir>/app/views/$1"
     }
   }
