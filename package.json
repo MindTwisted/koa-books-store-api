@@ -7,6 +7,8 @@
     "start": "nodemon -L --inspect=0.0.0.0 app/server.js",
     "test": "jest --forceExit --detectOpenHandles",
     "generate:keys": "node ./bin/generate-keys.js",
+    "db:seed": "node ./bin/db-seed.js",
+    "db:clear": "node ./bin/db-clear.js",
     "lint": "./node_modules/.bin/eslint ./app/**/* ./test/**/* ./bin/**/*",
     "lint:fix": "./node_modules/.bin/eslint ./app/**/* ./test/**/* ./bin/**/* --fix"
   },
@@ -45,9 +47,14 @@
     "@serializers": "./app/serializers",
     "@services": "./app/services",
     "@errors": "./app/errors",
+    "@config": "./app/config",
+    "@utils": "./app/utils",
     "@views": "./app/views"
   },
   "jest": {
+    "verbose": true,
+    "globalSetup": "<rootDir>/test/setup.js",
+    "globalTeardown": "<rootDir>/test/teardown.js",
     "testEnvironment": "node",
     "moduleNameMapper": {
       "@root/(.*)": "<rootDir>/$1",
@@ -59,6 +66,8 @@
       "@serializers/(.*)": "<rootDir>/app/serializers/$1",
       "@services/(.*)": "<rootDir>/app/services/$1",
       "@errors/(.*)": "<rootDir>/app/errors/$1",
+      "@config/(.*)": "<rootDir>/app/config/$1",
+      "@utils/(.*)": "<rootDir>/app/utils/$1",
       "@views/(.*)": "<rootDir>/app/views/$1"
     }
   }

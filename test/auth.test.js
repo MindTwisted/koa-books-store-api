@@ -1,15 +1,10 @@
-process.env.NODE_ENV = 'testing';
+require('@database/connection');
 
 const faker = require('faker');
 const supertest = require('supertest');
 const app = require('@root/app/app');
-const connection = require('@database/connection');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
-
-afterAll(async () => {
-    (await connection).connections[0].db.dropDatabase();
-});
 
 describe(`POST ${AUTH_URL}`, () => {
     test('user can register with valid data', async done => {
