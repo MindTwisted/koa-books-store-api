@@ -7,5 +7,6 @@ const seeder = require('@database/seeders');
 
 module.exports = async () => {
     global.connection = await makeConnection();
+    await seeder.userSeeder();
     await seeder.authorSeeder();
 };

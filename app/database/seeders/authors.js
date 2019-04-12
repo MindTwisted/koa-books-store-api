@@ -2,7 +2,7 @@ const faker = require('faker');
 const { generateUniqueValues } = require('@utils');
 const Author = require('@models/author');
 
-const authorSeeder = () => {
+const seeder = () => {
     return Author.create(
         generateUniqueValues(100, () => {
             return faker.name.firstName() + ' ' + faker.name.lastName();
@@ -12,4 +12,4 @@ const authorSeeder = () => {
     );
 };
 
-module.exports = authorSeeder;
+module.exports = seeder;

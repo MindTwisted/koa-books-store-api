@@ -23,6 +23,7 @@ const run = async () => {
         }
 
         await makeConnection();
+        await seeder.userSeeder();
         await seeder.authorSeeder();
 
         // eslint-disable-next-line no-console

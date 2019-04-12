@@ -1,10 +1,10 @@
 const Koa = require('koa');
 const app = new Koa();
 const bodyParser = require('koa-bodyparser');
-const apiRouter = require('@routes/api');
+const router = require('@routes/index');
 
 app.use(bodyParser());
-app.use(apiRouter.routes());
-app.use(apiRouter.allowedMethods());
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 module.exports = app;

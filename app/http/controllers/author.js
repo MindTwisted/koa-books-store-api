@@ -24,4 +24,10 @@ module.exports = {
 
         ctx.render({ data: { author } });
     },
+    async store(ctx) {
+        const { name } = ctx.request.body;
+        const author = await Author.create({ name });
+
+        return ctx.render({ text: `Author '${author.name}' was successfully created.`, data: { author } });
+    },
 };
