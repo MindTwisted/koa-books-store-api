@@ -13,16 +13,16 @@ const run = async () => {
                 default: false,
             },
         ]);
-    
+
         if (!answers.toClearDatabase) {
             // eslint-disable-next-line no-console
             console.log('Database was not cleared.');
-    
+
             process.exit(0);
         }
-        
+
         const connection = await makeConnection();
-        
+
         await connection.connections[0].db.dropDatabase();
 
         // eslint-disable-next-line no-console

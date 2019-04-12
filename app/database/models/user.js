@@ -41,13 +41,11 @@ const userSchema = mongoose.Schema(
     {
         timestamps: true,
         toJSON: {
-            virtuals: true,
             transform(doc, ret) {
                 delete ret.password;
                 delete ret.createdAt;
                 delete ret.updatedAt;
                 delete ret.__v;
-                delete ret._id;
 
                 return ret;
             },

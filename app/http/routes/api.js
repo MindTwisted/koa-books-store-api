@@ -17,5 +17,6 @@ router.put('/auth', loginMiddleware, authController.login);
 router.get('/auth', isLoggedInMiddleware, authController.current);
 
 router.get('/authors', authorController.index);
+router.get('/authors/:id', authorController.show);
 
 module.exports = router;

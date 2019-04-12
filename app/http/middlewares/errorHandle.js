@@ -19,6 +19,8 @@ module.exports = async (ctx, next) => {
                 return ctx.render({ text: error.message }, 401);
             case 'LoginError':
                 return ctx.render({ text: error.message }, 403);
+            case 'NotFoundError':
+                return ctx.render({ text: error.message }, 404);
             default:
                 return ctx.render(
                     {
