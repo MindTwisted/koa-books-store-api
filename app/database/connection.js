@@ -20,6 +20,4 @@ const makeConnection = async () => {
     return connection;
 };
 
-const connection = makeConnection();
-
-module.exports = connection;
+module.exports = makeConnection;

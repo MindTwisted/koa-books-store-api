@@ -1,10 +1,13 @@
-require('@database/connection');
-
 const faker = require('faker');
 const supertest = require('supertest');
+const makeConnection = require('@database/connection');
 const app = require('@root/app/app');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
+
+beforeAll(async () => {
+    await makeConnection();
+});
 
 describe(`POST ${AUTH_URL}`, () => {
     test('user can register with valid data', async done => {

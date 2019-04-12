@@ -1,11 +1,14 @@
-require('@database/connection');
-
 const faker = require('faker');
 const supertest = require('supertest');
+const makeConnection = require('@database/connection');
 const Author = require('@models/author');
 const app = require('@root/app/app');
 const server = supertest.agent(app.callback());
 const AUTHORS_URL = '/api/authors';
+
+beforeAll(async () => {
+    await makeConnection();
+});
 
 describe(`GET ${AUTHORS_URL}`, () => {
     test('user can get all authors', async done => {
