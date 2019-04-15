@@ -1,11 +1,11 @@
 const faker = require('faker');
 const { generateUniqueValues } = require('@utils');
-const Author = require('@models/author');
+const Genre = require('@models/genre');
 
 const seeder = () => {
-    return Author.create(
-        generateUniqueValues(400, () => {
-            return faker.name.firstName() + ' ' + faker.name.lastName();
+    return Genre.create(
+        generateUniqueValues(100, () => {
+            return faker.lorem.words(3);
         }).map(name => {
             return { name };
         }),

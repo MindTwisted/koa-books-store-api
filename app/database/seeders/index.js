@@ -1,7 +1,9 @@
-const authorSeeder = require('@database/seeders/authors');
 const userSeeder = require('@database/seeders/users');
+const authorSeeder = require('@database/seeders/authors');
+const genreSeeder = require('@database/seeders/genres');
 
 module.exports = {
-    authorSeeder,
     userSeeder,
+    authorSeeder,
+    genreSeeder,
 };

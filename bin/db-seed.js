@@ -25,6 +25,7 @@ const run = async () => {
         await makeConnection();
         await seeder.userSeeder();
         await seeder.authorSeeder();
+        await seeder.genreSeeder();
 
         // eslint-disable-next-line no-console
         console.log('Database was seeded.');
