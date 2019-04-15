@@ -440,4 +440,138 @@ describe(`PUT ${AUTHORS_URL}/:id`, () => {
 
         done();
     });
+
+    test('admin user can not update author by nonexistent mongodb id', async done => {
+        const id = mongoose.Types.ObjectId();
+        const updateName = faker.random.alphaNumeric(6);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${AUTHORS_URL}/${id}`)
+            .send({
+                name: updateName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not update author by invalid id', async done => {
+        const id = faker.random.alphaNumeric(10);
+        const updateName = faker.random.alphaNumeric(6);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${AUTHORS_URL}/${id}`)
+            .send({
+                name: updateName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
+describe(`DELETE ${AUTHORS_URL}/:id`, () => {
+    test('admin user can delete author by valid id', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`)).body.data.author;
+        const res = await server.delete(`${AUTHORS_URL}/${author._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        done();
+    });
+
+    test('unauthorized can not delete author', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`)).body.data.author;
+        const res = await server.delete(`${AUTHORS_URL}/${author._id}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not delete author', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`)).body.data.author;
+        const userToken = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${AUTHORS_URL}/${author._id}`).set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not delete author by nonexistent mongodb id', async done => {
+        const id = mongoose.Types.ObjectId();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${AUTHORS_URL}/${id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not delete author by invalid id', async done => {
+        const id = faker.random.alphaNumeric(10);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${AUTHORS_URL}/${id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
 });

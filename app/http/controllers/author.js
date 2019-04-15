@@ -39,6 +39,20 @@ module.exports = {
             { new: true, runValidators: true, context: 'query' },
         );
 
+        if (!author) {
+            throw new NotFoundError('Not found.');
+        }
+
         return ctx.render({ text: `Author '${author.name}' was successfully updated.`, data: { author } });
+    },
+    async destroy(ctx) {
+        const id = ctx.params.id;
+        const author = await Author.findOneAndRemove({ _id: id });
+
+        if (!author) {
+            throw new NotFoundError('Not found.');
+        }
+
+        return ctx.render({ text: `Author '${author.name}' was successfully deleted.` });
     },
 };

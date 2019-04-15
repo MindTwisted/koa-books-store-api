@@ -8,5 +8,6 @@ router.get('/', authorController.index);
 router.get('/:id', authorController.show);
 router.post('/', isLoggedInMiddleware, isAdminMiddleware, authorController.store);
 router.put('/:id', isLoggedInMiddleware, isAdminMiddleware, authorController.update);
+router.delete('/:id', isLoggedInMiddleware, isAdminMiddleware, authorController.destroy);
 
 module.exports = router;
