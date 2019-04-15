@@ -244,3 +244,200 @@ describe(`POST ${AUTHORS_URL}`, () => {
         done();
     });
 });
+
+describe(`PUT ${AUTHORS_URL}/:id`, () => {
+    test('admin user can update author with unique name', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(10);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`)).body.data.author;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: updateName,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('author');
+        expect(res.body.data.author.name).toEqual(updateName);
+
+        done();
+    });
+
+    test('admin user can update author with the same name', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`)).body.data.author;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('author');
+        expect(res.body.data.author.name).toEqual(initialName);
+
+        done();
+    });
+
+    test('unauthorized can not update author', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${token}`)).body.data.author;
+        const res = await server.put(`${AUTHORS_URL}/${author._id}`).send({
+            name: initialName,
+        });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not update author', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`)).body.data.author;
+        const userToken = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update author with empty name', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const updateName = '';
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`)).body.data.author;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: updateName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('name');
+
+        done();
+    });
+
+    test('admin user can not update author with name shorter than 6 chars', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(5);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`)).body.data.author;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: updateName,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('name');
+
+        done();
+    });
+
+    test('admin user can not update author with duplicate name', async done => {
+        const initialName1 = faker.random.alphaNumeric(6);
+        const initialName2 = faker.random.alphaNumeric(6);
+        const adminToken = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+
+        await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName1,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        const author = (await server
+            .post(`${AUTHORS_URL}`)
+            .send({
+                name: initialName2,
+            })
+            .set('Authorization', `Bearer ${adminToken}`)).body.data.author;
+        const res = await server
+            .put(`${AUTHORS_URL}/${author._id}`)
+            .send({
+                name: initialName1,
+            })
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('name');
+
+        done();
+    });
+});

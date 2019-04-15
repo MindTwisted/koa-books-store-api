@@ -7,5 +7,6 @@ const isAdminMiddleware = require('@middlewares/isAdmin');
 router.get('/', authorController.index);
 router.get('/:id', authorController.show);
 router.post('/', isLoggedInMiddleware, isAdminMiddleware, authorController.store);
+router.put('/:id', isLoggedInMiddleware, isAdminMiddleware, authorController.update);
 
 module.exports = router;

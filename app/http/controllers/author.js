@@ -30,4 +30,15 @@ module.exports = {
 
         return ctx.render({ text: `Author '${author.name}' was successfully created.`, data: { author } });
     },
+    async update(ctx) {
+        const id = ctx.params.id;
+        const { name } = ctx.request.body;
+        const author = await Author.findOneAndUpdate(
+            { _id: id },
+            { name },
+            { new: true, runValidators: true, context: 'query' },
+        );
+
+        return ctx.render({ text: `Author '${author.name}' was successfully updated.`, data: { author } });
+    },
 };
