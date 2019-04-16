@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const makeConnection = require('@database/connection');
 const Genre = require('@models/genre');
+const Book = require('@models/book');
 const app = require('@root/app/app');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
@@ -59,7 +60,7 @@ describe(`GET ${GENRES_URL}`, () => {
         const genres = await Genre.find({ name: new RegExp(search, 'i') })
             .lean()
             .select('name');
-        const res = await server.get(`${GENRES_URL}?search=${search}`);
+        const res = await server.get(`${GENRES_URL}?search=${encodeURIComponent(search)}`);
 
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
@@ -499,6 +500,39 @@ describe(`DELETE ${GENRES_URL}/:id`, () => {
 
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
+
+        done();
+    });
+
+    test('admin user can delete genre and this will cause removing genre-book relationship', async done => {
+        const genres = await Genre.create(
+            { name: faker.random.alphaNumeric(10) },
+            { name: faker.random.alphaNumeric(10) },
+        );
+        const genreIds = genres.map(a => a._id);
+        const book = await Book.create({
+            title: faker.random.alphaNumeric(10),
+            description: faker.random.alphaNumeric(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+            genres: genreIds,
+        });
+
+        expect(JSON.parse(JSON.stringify(book.genres))).toEqual(JSON.parse(JSON.stringify(genreIds)));
+
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const deleteId = genres[0]._id;
+        const res = await server.delete(`${GENRES_URL}/${deleteId}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        const updatedBook = await Book.findById(book._id);
+
+        expect(JSON.parse(JSON.stringify(updatedBook.genres))).toEqual(JSON.parse(JSON.stringify(genreIds.slice(1))));
 
         done();
     });

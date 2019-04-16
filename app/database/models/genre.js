@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
+const Book = require('@models/book');
 
 const genreSchema = mongoose.Schema(
     {
@@ -26,6 +27,18 @@ const genreSchema = mongoose.Schema(
 
 genreSchema.plugin(uniqueValidator, {
     message: 'This {PATH} is already exists.',
+});
+
+genreSchema.post('findOneAndRemove', async function(doc, next) {
+    if (!doc) {
+        return next();
+    }
+
+    const id = doc._id;
+
+    await Book.updateMany({ genres: { $in: [id] } }, { $pull: { genres: id } });
+
+    return next();
 });
 
 const Genre = mongoose.model('genre', genreSchema);

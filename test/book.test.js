@@ -67,7 +67,7 @@ describe(`GET ${BOOKS_URL}`, () => {
             .populate('authors genres', 'name')
             .lean()
             .select('title description price discount');
-        const res = await server.get(`${BOOKS_URL}?search=${search}`);
+        const res = await server.get(`${BOOKS_URL}?search=${encodeURIComponent(search)}`);
 
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');

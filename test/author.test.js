@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const makeConnection = require('@database/connection');
 const Author = require('@models/author');
+const Book = require('@models/book');
 const app = require('@root/app/app');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
@@ -59,7 +60,7 @@ describe(`GET ${AUTHORS_URL}`, () => {
         const authors = await Author.find({ name: new RegExp(search, 'i') })
             .lean()
             .select('name');
-        const res = await server.get(`${AUTHORS_URL}?search=${search}`);
+        const res = await server.get(`${AUTHORS_URL}?search=${encodeURIComponent(search)}`);
 
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
@@ -499,6 +500,39 @@ describe(`DELETE ${AUTHORS_URL}/:id`, () => {
 
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
+
+        done();
+    });
+
+    test('admin user can delete author and this will cause removing author-book relationship', async done => {
+        const authors = await Author.create(
+            { name: faker.random.alphaNumeric(10) },
+            { name: faker.random.alphaNumeric(10) },
+        );
+        const authorIds = authors.map(a => a._id);
+        const book = await Book.create({
+            title: faker.random.alphaNumeric(10),
+            description: faker.random.alphaNumeric(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+            authors: authorIds,
+        });
+
+        expect(JSON.parse(JSON.stringify(book.authors))).toEqual(JSON.parse(JSON.stringify(authorIds)));
+
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const deleteId = authors[0]._id;
+        const res = await server.delete(`${AUTHORS_URL}/${deleteId}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        const updatedBook = await Book.findById(book._id);
+
+        expect(JSON.parse(JSON.stringify(updatedBook.authors))).toEqual(JSON.parse(JSON.stringify(authorIds.slice(1))));
 
         done();
     });
