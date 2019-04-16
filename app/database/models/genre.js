@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
-const NotFoundError = require('@errors/NotFoundError');
 
 const genreSchema = mongoose.Schema(
     {
@@ -27,22 +26,6 @@ const genreSchema = mongoose.Schema(
 
 genreSchema.plugin(uniqueValidator, {
     message: 'This {PATH} is already exists.',
-});
-
-genreSchema.pre(/^find/, async function(next) {
-    const id = this.getQuery()._id;
-
-    if (!id) {
-        return next();
-    }
-
-    try {
-        mongoose.Types.ObjectId(id);
-
-        return next();
-    } catch (error) {
-        throw new NotFoundError('Not found.');
-    }
 });
 
 const Genre = mongoose.model('genre', genreSchema);

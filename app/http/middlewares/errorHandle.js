@@ -22,6 +22,8 @@ module.exports = async (ctx, next) => {
                 return ctx.render({ text: error.message }, 403);
             case 'NotFoundError':
                 return ctx.render({ text: error.message }, 404);
+            case 'CastError':
+                return ctx.render({ text: 'Not found.' }, 404);
             default:
                 return ctx.render(
                     {

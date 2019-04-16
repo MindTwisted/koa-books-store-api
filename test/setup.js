@@ -10,4 +10,5 @@ module.exports = async () => {
     await seeder.userSeeder();
     await seeder.authorSeeder();
     await seeder.genreSeeder();
+    await seeder.bookSeeder();
 };

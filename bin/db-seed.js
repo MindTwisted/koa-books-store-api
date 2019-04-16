@@ -26,6 +26,7 @@ const run = async () => {
         await seeder.userSeeder();
         await seeder.authorSeeder();
         await seeder.genreSeeder();
+        await seeder.bookSeeder();
 
         // eslint-disable-next-line no-console
         console.log('Database was seeded.');
