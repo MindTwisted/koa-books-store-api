@@ -20,7 +20,19 @@ module.exports = {
 
         ctx.render({ data: { books } });
     },
-    async show(ctx) {},
+    async show(ctx) {
+        const id = ctx.params.id;
+        const book = await Book.findById(id)
+            .populate('authors genres', 'name')
+            .lean()
+            .select('title description price discount');
+
+        if (!book) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ data: { book } });
+    },
     async store(ctx) {},
     async update(ctx) {},
     async destroy(ctx) {},

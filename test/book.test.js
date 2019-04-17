@@ -114,3 +114,52 @@ describe(`GET ${BOOKS_URL}`, () => {
         done();
     });
 });
+
+describe(`GET ${BOOKS_URL}/:id`, () => {
+    test('user can get book by valid id', async done => {
+        const authors = await Author.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const genres = await Genre.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const authorIds = authors.map(a => a._id);
+        const genreIds = genres.map(a => a._id);
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+            authors: authorIds,
+            genres: genreIds,
+        });
+        const fetchedBook = await Book.findById(book._id)
+            .populate('authors genres', 'name')
+            .lean()
+            .select('title description price discount');
+        const res = await server.get(`${BOOKS_URL}/${book._id}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('book');
+        expect(res.body.data.book).toEqual(JSON.parse(JSON.stringify(fetchedBook)));
+
+        done();
+    });
+
+    test('user can not get book by nonexistent mongodb id', async done => {
+        const id = mongoose.Types.ObjectId();
+        const res = await server.get(`${BOOKS_URL}/${id}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not get book by invalid id', async done => {
+        const id = faker.random.alphaNumeric(10);
+        const res = await server.get(`${BOOKS_URL}/${id}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
