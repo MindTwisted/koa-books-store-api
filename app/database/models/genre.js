@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
-const Book = require('@models/book');
 
 const genreSchema = mongoose.Schema(
     {
@@ -36,7 +35,7 @@ genreSchema.post('findOneAndRemove', async function(doc, next) {
 
     const id = doc._id;
 
-    await Book.updateMany({ genres: { $in: [id] } }, { $pull: { genres: id } });
+    await mongoose.model('book').updateMany({ genres: { $in: [id] } }, { $pull: { genres: id } });
 
     return next();
 });

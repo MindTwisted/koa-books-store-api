@@ -3,6 +3,7 @@ const config = require('@config/config');
 const User = require('@models/user');
 const Author = require('@models/author');
 const Genre = require('@models/genre');
+const Book = require('@models/book');
 
 const connect = () => {
     return mongoose.connect(`mongodb://${config.DB_HOST}:${config.DB_PORT}`, {
@@ -16,7 +17,7 @@ const connect = () => {
 const makeConnection = async () => {
     const connection = await connect();
 
-    await Promise.all([User.init(), Author.init(), Genre.init()]);
+    await Promise.all([User.init(), Author.init(), Genre.init(), Book.init()]);
 
     return connection;
 };

@@ -33,12 +33,36 @@ const bookSchema = mongoose.Schema(
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'author',
+                validate: {
+                    async validator(v) {
+                        const author = await mongoose.model('author').findById(v);
+
+                        if (!author) {
+                            return false;
+                        }
+
+                        return true;
+                    },
+                    message: props => `Author with id '${props.value}' does not exist.`,
+                },
             },
         ],
         genres: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'genre',
+                validate: {
+                    async validator(v) {
+                        const genre = await mongoose.model('genre').findById(v);
+
+                        if (!genre) {
+                            return false;
+                        }
+
+                        return true;
+                    },
+                    message: props => `Genre with id '${props.value}' does not exist.`,
+                },
             },
         ],
     },

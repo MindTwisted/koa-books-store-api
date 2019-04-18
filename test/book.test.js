@@ -163,3 +163,445 @@ describe(`GET ${BOOKS_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`POST ${BOOKS_URL}`, () => {
+    test('admin user can create new book with valid data provided', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('book');
+        expect(res.body.data.book.title).toEqual(title);
+        expect(res.body.data.book.description).toEqual(description);
+        expect(res.body.data.book.price).toEqual(price);
+        expect(res.body.data.book.discount).toEqual(discount);
+        expect(res.body.data.book.authors).toHaveLength(0);
+        expect(res.body.data.book.genres).toHaveLength(0);
+
+        done();
+    });
+
+    test('admin user can create new book with authors, genres and valid data provided', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const authors = await Author.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const genres = await Genre.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({
+                title,
+                description,
+                price,
+                discount,
+                authors: authors.map(a => a._id),
+                genres: genres.map(a => a._id),
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('book');
+        expect(res.body.data.book.title).toEqual(title);
+        expect(res.body.data.book.description).toEqual(description);
+        expect(res.body.data.book.price).toEqual(price);
+        expect(res.body.data.book.discount).toEqual(discount);
+        expect(res.body.data.book.authors).toEqual(JSON.parse(JSON.stringify(authors)));
+        expect(res.body.data.book.genres).toEqual(JSON.parse(JSON.stringify(genres)));
+
+        done();
+    });
+
+    test('unauthorized can not create new book', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const res = await server.post(`${BOOKS_URL}`).send({ title, description, price, discount });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not create new book', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not create new book with empty title', async done => {
+        const title = '';
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with title shorter than 6 chars', async done => {
+        const title = faker.random.alphaNumeric(5);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with empty description', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = '';
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with description shorter than 20 chars', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(19);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with empty price', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = '';
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with price less than 0', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = -1;
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with price not numeric', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.alphaNumeric(3);
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with empty discount', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = '';
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with discount less than 0', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = -1;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with discount greater than 50', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = 51;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with discount not numeric', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.alphaNumeric(2);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).toHaveProperty('discount');
+        expect(res.body.data.errors).not.toHaveProperty('authors');
+        expect(res.body.data.errors).not.toHaveProperty('genres');
+
+        done();
+    });
+
+    test('admin user can not create new book with authors and genres contains not existed mongodb ids', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const authors = [mongoose.Types.ObjectId(), mongoose.Types.ObjectId()];
+        const genres = [mongoose.Types.ObjectId(), mongoose.Types.ObjectId()];
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount, authors, genres })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).toHaveProperty(['authors.0']);
+        expect(res.body.data.errors).toHaveProperty(['authors.1']);
+        expect(res.body.data.errors).toHaveProperty(['genres.0']);
+        expect(res.body.data.errors).toHaveProperty(['genres.1']);
+
+        done();
+    });
+
+    test('admin user can not create new book with authors and genres contains not valid mongodb ids', async done => {
+        const title = faker.random.alphaNumeric(6);
+        const description = faker.random.alphaNumeric(20);
+        const price = faker.random.number({ min: 30, max: 100 });
+        const discount = faker.random.number({ min: 0, max: 50 });
+        const authors = [faker.random.alphaNumeric(10), faker.random.alphaNumeric(10)];
+        const genres = [faker.random.alphaNumeric(10), faker.random.alphaNumeric(10)];
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}`)
+            .send({ title, description, price, discount, authors, genres })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).not.toHaveProperty('title');
+        expect(res.body.data.errors).not.toHaveProperty('description');
+        expect(res.body.data.errors).not.toHaveProperty('price');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+        expect(res.body.data.errors).toHaveProperty('authors');
+        expect(res.body.data.errors).toHaveProperty('genres');
+
+        done();
+    });
+});
