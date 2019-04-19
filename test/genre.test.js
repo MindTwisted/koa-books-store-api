@@ -124,6 +124,72 @@ describe(`GET ${GENRES_URL}/:id`, () => {
     });
 });
 
+describe(`GET ${GENRES_URL}/:id/books`, () => {
+    test('user can get books by valid genre id', async done => {
+        const genre = (await Genre.find({}, {}, { limit: 1 }))[0];
+        const res = await server.get(`${GENRES_URL}/${genre._id}/books`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+
+        res.body.data.books.map(book => {
+            expect(book.genres.map(a => a._id)).toContain(genre._id.toString());
+        });
+
+        done();
+    });
+
+    test('user can get books by valid genre id with offset', async done => {
+        const offset = faker.random.number({ min: 1, max: 50 });
+        const genre = (await Genre.find({}, {}, { limit: 1 }))[0];
+        const res = await server.get(`${GENRES_URL}/${genre._id}/books`);
+        const resWithOffset = await server.get(`${GENRES_URL}/${genre._id}/books?offset=${offset}`);
+        const resLength = res.body.data.books.length;
+        const resWithOffsetLength = resWithOffset.body.data.books.length;
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+
+        res.body.data.books.map(book => {
+            expect(book.genres.map(a => a._id)).toContain(genre._id.toString());
+        });
+
+        expect(resWithOffset.status).toEqual(200);
+        expect(resWithOffset.body.status).toBe('success');
+        expect(resWithOffset.body.data).toHaveProperty('books');
+
+        resWithOffset.body.data.books.map(book => {
+            expect(book.genres.map(a => a._id)).toContain(genre._id.toString());
+        });
+
+        expect(resLength - resWithOffsetLength).toBeLessThanOrEqual(offset);
+
+        done();
+    });
+
+    test('user can not get books by nonexistent mongodb id', async done => {
+        const res = await server.get(`${GENRES_URL}/${mongoose.Types.ObjectId()}/books`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+        expect(res.body.data.books).toEqual([]);
+
+        done();
+    });
+
+    test('user can not get books by invalid mongodb id', async done => {
+        const res = await server.get(`${GENRES_URL}/${faker.random.alphaNumeric(10)}/books`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
 describe(`POST ${GENRES_URL}`, () => {
     test('admin user can create new genre with valid name', async done => {
         const genreName = faker.random.alphaNumeric(6);

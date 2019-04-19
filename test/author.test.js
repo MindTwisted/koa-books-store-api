@@ -124,6 +124,72 @@ describe(`GET ${AUTHORS_URL}/:id`, () => {
     });
 });
 
+describe(`GET ${AUTHORS_URL}/:id/books`, () => {
+    test('user can get books by valid author id', async done => {
+        const author = (await Author.find({}, {}, { limit: 1 }))[0];
+        const res = await server.get(`${AUTHORS_URL}/${author._id}/books`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+
+        res.body.data.books.map(book => {
+            expect(book.authors.map(a => a._id)).toContain(author._id.toString());
+        });
+
+        done();
+    });
+
+    test('user can get books by valid author id with offset', async done => {
+        const offset = faker.random.number({ min: 1, max: 50 });
+        const author = (await Author.find({}, {}, { limit: 1 }))[0];
+        const res = await server.get(`${AUTHORS_URL}/${author._id}/books`);
+        const resWithOffset = await server.get(`${AUTHORS_URL}/${author._id}/books?offset=${offset}`);
+        const resLength = res.body.data.books.length;
+        const resWithOffsetLength = resWithOffset.body.data.books.length;
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+
+        res.body.data.books.map(book => {
+            expect(book.authors.map(a => a._id)).toContain(author._id.toString());
+        });
+
+        expect(resWithOffset.status).toEqual(200);
+        expect(resWithOffset.body.status).toBe('success');
+        expect(resWithOffset.body.data).toHaveProperty('books');
+
+        resWithOffset.body.data.books.map(book => {
+            expect(book.authors.map(a => a._id)).toContain(author._id.toString());
+        });
+
+        expect(resLength - resWithOffsetLength).toBeLessThanOrEqual(offset);
+
+        done();
+    });
+
+    test('user can not get books by nonexistent mongodb id', async done => {
+        const res = await server.get(`${AUTHORS_URL}/${mongoose.Types.ObjectId()}/books`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('books');
+        expect(res.body.data.books).toEqual([]);
+
+        done();
+    });
+
+    test('user can not get books by invalid mongodb id', async done => {
+        const res = await server.get(`${AUTHORS_URL}/${faker.random.alphaNumeric(10)}/books`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
 describe(`POST ${AUTHORS_URL}`, () => {
     test('admin user can create new author with valid name', async done => {
         const authorName = faker.random.alphaNumeric(6);

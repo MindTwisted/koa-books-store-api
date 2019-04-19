@@ -1,4 +1,5 @@
 const Author = require('@models/author');
+const Book = require('@models/book');
 const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
@@ -23,6 +24,17 @@ module.exports = {
         }
 
         ctx.render({ data: { author } });
+    },
+    async showBooks(ctx) {
+        const id = ctx.params.id;
+        const { offset } = ctx.request.query;
+        const offsetClause = offset ? { skip: Number(offset) } : {};
+        const books = await Book.find({ authors: { $in: [id] } }, {}, { limit: 50, ...offsetClause })
+            .populate('authors genres', 'name')
+            .lean()
+            .select('title description price discount');
+
+        ctx.render({ data: { books } });
     },
     async store(ctx) {
         const { name } = ctx.request.body;
