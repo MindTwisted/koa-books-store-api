@@ -69,5 +69,14 @@ module.exports = {
 
         return ctx.render({ text: `Book '${book.title}' was successfully updated.`, data: { book } });
     },
-    async destroy(ctx) {},
+    async destroy(ctx) {
+        const id = ctx.params.id;
+        const book = await Book.findOneAndRemove({ _id: id });
+
+        if (!book) {
+            throw new NotFoundError('Not found.');
+        }
+
+        return ctx.render({ text: `Book '${book.title}' was successfully deleted.` });
+    },
 };

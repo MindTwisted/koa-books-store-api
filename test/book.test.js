@@ -1574,3 +1574,112 @@ describe(`PUT ${BOOKS_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`DELETE ${BOOKS_URL}/:id`, () => {
+    test('admin user can delete book by valid id', async done => {
+        const initialTitle = faker.random.alphaNumeric(6);
+        const initialDescription = faker.random.alphaNumeric(20);
+        const initialPrice = faker.random.number({ min: 30, max: 100 });
+        const initialDiscount = faker.random.number({ min: 0, max: 50 });
+        const initialAuthors = await Author.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialGenres = await Genre.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialBook = await Book.create({
+            title: initialTitle,
+            description: initialDescription,
+            price: initialPrice,
+            discount: initialDiscount,
+            authors: initialAuthors.map(a => a._id),
+            genres: initialGenres.map(a => a._id),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${BOOKS_URL}/${initialBook._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        done();
+    });
+
+    test('unauthorized can not delete book', async done => {
+        const initialTitle = faker.random.alphaNumeric(6);
+        const initialDescription = faker.random.alphaNumeric(20);
+        const initialPrice = faker.random.number({ min: 30, max: 100 });
+        const initialDiscount = faker.random.number({ min: 0, max: 50 });
+        const initialAuthors = await Author.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialGenres = await Genre.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialBook = await Book.create({
+            title: initialTitle,
+            description: initialDescription,
+            price: initialPrice,
+            discount: initialDiscount,
+            authors: initialAuthors.map(a => a._id),
+            genres: initialGenres.map(a => a._id),
+        });
+        const res = await server.delete(`${BOOKS_URL}/${initialBook._id}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not delete book', async done => {
+        const initialTitle = faker.random.alphaNumeric(6);
+        const initialDescription = faker.random.alphaNumeric(20);
+        const initialPrice = faker.random.number({ min: 30, max: 100 });
+        const initialDiscount = faker.random.number({ min: 0, max: 50 });
+        const initialAuthors = await Author.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialGenres = await Genre.find({}, {}, { limit: faker.random.number({ min: 1, max: 5 }) });
+        const initialBook = await Book.create({
+            title: initialTitle,
+            description: initialDescription,
+            price: initialPrice,
+            discount: initialDiscount,
+            authors: initialAuthors.map(a => a._id),
+            genres: initialGenres.map(a => a._id),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${BOOKS_URL}/${initialBook._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not delete book by nonexistent mongodb id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${BOOKS_URL}/${mongoose.Types.ObjectId()}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not delete book by invalid mongodb id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${BOOKS_URL}/${faker.random.alphaNumeric(10)}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
