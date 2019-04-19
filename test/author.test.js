@@ -117,7 +117,7 @@ describe(`GET ${AUTHORS_URL}/:id`, () => {
         const id = faker.random.alphaNumeric(10);
         const res = await server.get(`${AUTHORS_URL}/${id}`);
 
-        expect(res.status).toEqual(404);
+        expect(res.status).toEqual(422);
         expect(res.body.status).toBe('failed');
 
         done();
@@ -476,7 +476,7 @@ describe(`PUT ${AUTHORS_URL}/:id`, () => {
             })
             .set('Authorization', `Bearer ${adminToken}`);
 
-        expect(res.status).toEqual(404);
+        expect(res.status).toEqual(422);
         expect(res.body.status).toBe('failed');
 
         done();
@@ -603,7 +603,7 @@ describe(`DELETE ${AUTHORS_URL}/:id`, () => {
         })).body.data.token;
         const res = await server.delete(`${AUTHORS_URL}/${id}`).set('Authorization', `Bearer ${token}`);
 
-        expect(res.status).toEqual(404);
+        expect(res.status).toEqual(422);
         expect(res.body.status).toBe('failed');
 
         done();

@@ -1,4 +1,5 @@
 const validationErrorSerializer = require('@serializers/validationError');
+const castErrorSerializer = require('@serializers/castError');
 
 module.exports = async (ctx, next) => {
     try {
@@ -15,6 +16,16 @@ module.exports = async (ctx, next) => {
                     },
                     422,
                 );
+            case 'CastError':
+                return ctx.render(
+                    {
+                        text: 'Validation failed',
+                        data: {
+                            errors: castErrorSerializer.serialize(error),
+                        },
+                    },
+                    422,
+                );
             case 'UnauthorizedError':
                 return ctx.render({ text: error.message }, 401);
             case 'LoginError':
@@ -22,15 +33,8 @@ module.exports = async (ctx, next) => {
                 return ctx.render({ text: error.message }, 403);
             case 'NotFoundError':
                 return ctx.render({ text: error.message }, 404);
-            case 'CastError':
-                return ctx.render({ text: 'Not found.' }, 404);
             default:
-                return ctx.render(
-                    {
-                        text: 'Unexpected error occurred.',
-                    },
-                    500,
-                );
+                return ctx.render({ text: 'Unexpected error occurred.' }, 500);
         }
     }
 };

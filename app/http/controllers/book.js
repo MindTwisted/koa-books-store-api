@@ -47,6 +47,27 @@ module.exports = {
 
         return ctx.render({ text: `Book '${book.title}' was successfully created.`, data: { book: populatedBook } });
     },
-    async update(ctx) {},
+    async update(ctx) {
+        const id = ctx.params.id;
+        const { title, description, price, discount, authors, genres } = ctx.request.body;
+        const book = await Book.findOneAndUpdate(
+            { _id: id },
+            {
+                title,
+                description,
+                price,
+                discount,
+                authors: _.uniq(_.compact(_.map(_.split(authors, ','), _.trim))),
+                genres: _.uniq(_.compact(_.map(_.split(genres, ','), _.trim))),
+            },
+            { new: true, runValidators: true, context: 'query' },
+        ).populate('authors genres', 'name');
+
+        if (!book) {
+            throw new NotFoundError('Not found.');
+        }
+
+        return ctx.render({ text: `Book '${book.title}' was successfully updated.`, data: { book } });
+    },
     async destroy(ctx) {},
 };
