@@ -32,7 +32,7 @@ module.exports = {
         const books = await Book.find({ authors: { $in: [id] } }, {}, { limit: 50, ...offsetClause })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
 
         ctx.render({ data: { books } });
     },

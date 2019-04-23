@@ -1,6 +1,7 @@
+const _ = require('lodash');
 const Book = require('@models/book');
 const NotFoundError = require('@errors/NotFoundError');
-const _ = require('lodash');
+const storageService = require('@services/storage/local');
 
 module.exports = {
     async index(ctx) {
@@ -16,7 +17,7 @@ module.exports = {
         )
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
 
         ctx.render({ data: { books } });
     },
@@ -25,7 +26,7 @@ module.exports = {
         const book = await Book.findById(id)
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
 
         if (!book) {
             throw new NotFoundError('Not found.');
@@ -46,6 +47,27 @@ module.exports = {
         const populatedBook = await book.populate('authors genres', 'name').execPopulate();
 
         return ctx.render({ text: `Book '${book.title}' was successfully created.`, data: { book: populatedBook } });
+    },
+    async storeImage(ctx) {
+        const id = ctx.params.id;
+        const image = ctx.request.files ? ctx.request.files.image : null;
+        const book = await Book.findOneAndUpdate(
+            { _id: id },
+            {
+                image: await storageService.store(image, {
+                    type: 'image',
+                    folderName: 'books',
+                    fieldName: 'image',
+                }),
+            },
+            { new: true, runValidators: true, context: 'query' },
+        ).populate('authors genres', 'name');
+
+        if (!book) {
+            throw new NotFoundError('Not found.');
+        }
+
+        return ctx.render({ text: `Image for book '${book.title}' was successfully updated.`, data: { book } });
     },
     async update(ctx) {
         const id = ctx.params.id;

@@ -7,3 +7,7 @@ node_modules
 # security keys
 private.key
 public.key
+
+# public
+/public/storage/*
+!/public/storage/.gitkeep

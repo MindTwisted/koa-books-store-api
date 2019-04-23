@@ -26,6 +26,18 @@ module.exports = async (ctx, next) => {
                     },
                     422,
                 );
+            case 'UploadError':
+                return ctx.render(
+                    {
+                        text: error.message,
+                        data: {
+                            errors: {
+                                [error.fieldName]: error.errors,
+                            },
+                        },
+                    },
+                    422,
+                );
             case 'UnauthorizedError':
                 return ctx.render({ text: error.message }, 401);
             case 'LoginError':

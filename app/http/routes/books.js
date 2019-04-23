@@ -7,6 +7,7 @@ const isAdminMiddleware = require('@middlewares/isAdmin');
 router.get('/', bookController.index);
 router.get('/:id', bookController.show);
 router.post('/', isLoggedInMiddleware, isAdminMiddleware, bookController.store);
+router.post('/:id/image', isLoggedInMiddleware, isAdminMiddleware, bookController.storeImage);
 router.put('/:id', isLoggedInMiddleware, isAdminMiddleware, bookController.update);
 router.delete('/:id', isLoggedInMiddleware, isAdminMiddleware, bookController.destroy);
 

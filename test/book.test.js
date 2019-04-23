@@ -22,7 +22,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const books = await Book.find({}, {}, { limit })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}`);
 
         expect(res.status).toEqual(200);
@@ -40,7 +40,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const books = await Book.find({}, {}, { limit, skip: offset })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?offset=${offset}`);
 
         expect(res.status).toEqual(200);
@@ -66,7 +66,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const books = await Book.find({ title: new RegExp(search, 'i') }, {}, { limit: 50 })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?search=${encodeURIComponent(search)}`);
 
         expect(res.status).toEqual(200);
@@ -84,7 +84,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const books = await Book.find({ authors: { $in: ids } }, {}, { limit: 50 })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?authors=${ids.join(',')}`);
 
         expect(res.status).toEqual(200);
@@ -102,7 +102,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const books = await Book.find({ genres: { $in: ids } }, {}, { limit: 50 })
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?genres=${ids.join(',')}`);
 
         expect(res.status).toEqual(200);
@@ -132,7 +132,7 @@ describe(`GET ${BOOKS_URL}/:id`, () => {
         const fetchedBook = await Book.findById(book._id)
             .populate('authors genres', 'name')
             .lean()
-            .select('title description price discount');
+            .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}/${book._id}`);
 
         expect(res.status).toEqual(200);
@@ -601,6 +601,140 @@ describe(`POST ${BOOKS_URL}`, () => {
         expect(res.body.data.errors).not.toHaveProperty('discount');
         expect(res.body.data.errors).toHaveProperty('authors');
         expect(res.body.data.errors).toHaveProperty('genres');
+
+        done();
+    });
+});
+
+describe(`POST ${BOOKS_URL}/:id/image`, () => {
+    test('admin user can update book image with valid image and valid id', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const filePath = `${__dirname}/testFiles/image.jpg`;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}/${book._id}/image`)
+            .attach('image', filePath)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('book');
+        expect(res.body.data.book.image).not.toBeNull();
+
+        done();
+    });
+
+    test('admin user can delete book image with valid id and empty request body', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.post(`${BOOKS_URL}/${book._id}/image`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('book');
+        expect(res.body.data.book.image).toBeNull();
+
+        done();
+    });
+
+    test('unauthorized can not update book image with valid id', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const res = await server.post(`${BOOKS_URL}/${book._id}/image`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not update book image with valid id', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.post(`${BOOKS_URL}/${book._id}/image`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update book image with image larger than 5mb and valid id', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const filePath = `${__dirname}/testFiles/large-image.jpg`;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}/${book._id}/image`)
+            .attach('image', filePath)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('image');
+
+        done();
+    });
+
+    test('admin user can not update book image with not-image file and valid id', async done => {
+        const book = (await Book.find({}, {}, { limit: 1 }))[0];
+        const filePath = `${__dirname}/testFiles/not-image.pdf`;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}/${book._id}/image`)
+            .attach('image', filePath)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data.errors).toHaveProperty('image');
+
+        done();
+    });
+
+    test('admin user can not update book image with valid image and non-existent mongodb id', async done => {
+        const filePath = `${__dirname}/testFiles/image.jpg`;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}/${mongoose.Types.ObjectId()}/image`)
+            .attach('image', filePath)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update book image with valid image and not valid mongodb id', async done => {
+        const filePath = `${__dirname}/testFiles/image.jpg`;
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .post(`${BOOKS_URL}/${faker.random.alphaNumeric(10)}/image`)
+            .attach('image', filePath)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
 
         done();
     });

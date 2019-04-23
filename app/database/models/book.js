@@ -14,7 +14,7 @@ const bookSchema = mongoose.Schema(
             required: [true, 'This field is required.'],
             minlength: [20, 'This field should be at least 20 characters long.'],
         },
-        imagePath: {
+        image: {
             type: String,
             default: null,
         },
