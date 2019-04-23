@@ -3,6 +3,11 @@ const Book = require('@models/book');
 const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
+    /**
+     * Get all genres
+     *
+     * @param {Context} ctx
+     */
     async index(ctx) {
         const { offset, search } = ctx.request.query;
         const searchClause = search ? { name: new RegExp(search, 'i') } : {};
@@ -13,6 +18,11 @@ module.exports = {
 
         ctx.render({ data: { genres } });
     },
+    /**
+     * Get genre by id
+     *
+     * @param {Context} ctx
+     */
     async show(ctx) {
         const id = ctx.params.id;
         const genre = await Genre.findById(id)
@@ -25,6 +35,11 @@ module.exports = {
 
         ctx.render({ data: { genre } });
     },
+    /**
+     * Get books by genre id
+     *
+     * @param {Context} ctx
+     */
     async showBooks(ctx) {
         const id = ctx.params.id;
         const { offset } = ctx.request.query;
@@ -36,12 +51,22 @@ module.exports = {
 
         ctx.render({ data: { books } });
     },
+    /**
+     * Create new genre
+     *
+     * @param {Context} ctx
+     */
     async store(ctx) {
         const { name } = ctx.request.body;
         const genre = await Genre.create({ name });
 
-        return ctx.render({ text: `Genre '${genre.name}' was successfully created.`, data: { genre } });
+        ctx.render({ text: `Genre '${genre.name}' was successfully created.`, data: { genre } });
     },
+    /**
+     * Update genre by id
+     *
+     * @param {Context} ctx
+     */
     async update(ctx) {
         const id = ctx.params.id;
         const { name } = ctx.request.body;
@@ -55,8 +80,13 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Genre '${genre.name}' was successfully updated.`, data: { genre } });
+        ctx.render({ text: `Genre '${genre.name}' was successfully updated.`, data: { genre } });
     },
+    /**
+     * Delete genre by id
+     *
+     * @param {Context} ctx
+     */
     async destroy(ctx) {
         const id = ctx.params.id;
         const genre = await Genre.findOneAndRemove({ _id: id });
@@ -65,6 +95,6 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Genre '${genre.name}' was successfully deleted.` });
+        ctx.render({ text: `Genre '${genre.name}' was successfully deleted.` });
     },
 };

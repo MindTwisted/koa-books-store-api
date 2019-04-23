@@ -4,6 +4,11 @@ const NotFoundError = require('@errors/NotFoundError');
 const storageService = require('@services/storage/local');
 
 module.exports = {
+    /**
+     * Get all books
+     *
+     * @param {Context} ctx
+     */
     async index(ctx) {
         const { offset, search, authors, genres } = ctx.request.query;
         const searchClause = search ? { title: new RegExp(search, 'i') } : {};
@@ -21,6 +26,11 @@ module.exports = {
 
         ctx.render({ data: { books } });
     },
+    /**
+     * Get book by id
+     *
+     * @param {Context} ctx
+     */
     async show(ctx) {
         const id = ctx.params.id;
         const book = await Book.findById(id)
@@ -34,6 +44,11 @@ module.exports = {
 
         ctx.render({ data: { book } });
     },
+    /**
+     * Create new book
+     *
+     * @param {Context} ctx
+     */
     async store(ctx) {
         const { title, description, price, discount, authors, genres } = ctx.request.body;
         const book = await Book.create({
@@ -46,8 +61,13 @@ module.exports = {
         });
         const populatedBook = await book.populate('authors genres', 'name').execPopulate();
 
-        return ctx.render({ text: `Book '${book.title}' was successfully created.`, data: { book: populatedBook } });
+        ctx.render({ text: `Book '${book.title}' was successfully created.`, data: { book: populatedBook } });
     },
+    /**
+     * Update image for book by id
+     *
+     * @param {Context} ctx
+     */
     async storeImage(ctx) {
         const id = ctx.params.id;
         const image = ctx.request.files ? ctx.request.files.image : null;
@@ -67,8 +87,13 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Image for book '${book.title}' was successfully updated.`, data: { book } });
+        ctx.render({ text: `Image for book '${book.title}' was successfully updated.`, data: { book } });
     },
+    /**
+     * Update book by id
+     *
+     * @param {Context} ctx
+     */
     async update(ctx) {
         const id = ctx.params.id;
         const { title, description, price, discount, authors, genres } = ctx.request.body;
@@ -89,8 +114,13 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Book '${book.title}' was successfully updated.`, data: { book } });
+        ctx.render({ text: `Book '${book.title}' was successfully updated.`, data: { book } });
     },
+    /**
+     * Delete book by id
+     *
+     * @param {Context} ctx
+     */
     async destroy(ctx) {
         const id = ctx.params.id;
         const book = await Book.findOneAndRemove({ _id: id });
@@ -99,6 +129,6 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Book '${book.title}' was successfully deleted.` });
+        ctx.render({ text: `Book '${book.title}' was successfully deleted.` });
     },
 };

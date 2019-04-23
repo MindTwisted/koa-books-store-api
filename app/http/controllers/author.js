@@ -3,6 +3,11 @@ const Book = require('@models/book');
 const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
+    /**
+     * Get all authors
+     *
+     * @param {Context} ctx
+     */
     async index(ctx) {
         const { offset, search } = ctx.request.query;
         const searchClause = search ? { name: new RegExp(search, 'i') } : {};
@@ -13,6 +18,11 @@ module.exports = {
 
         ctx.render({ data: { authors } });
     },
+    /**
+     * Get author by id
+     *
+     * @param {Context} ctx
+     */
     async show(ctx) {
         const id = ctx.params.id;
         const author = await Author.findById(id)
@@ -25,6 +35,11 @@ module.exports = {
 
         ctx.render({ data: { author } });
     },
+    /**
+     * Get books by author id
+     *
+     * @param {Context} ctx
+     */
     async showBooks(ctx) {
         const id = ctx.params.id;
         const { offset } = ctx.request.query;
@@ -36,12 +51,22 @@ module.exports = {
 
         ctx.render({ data: { books } });
     },
+    /**
+     * Create new author
+     *
+     * @param {Context} ctx
+     */
     async store(ctx) {
         const { name } = ctx.request.body;
         const author = await Author.create({ name });
 
-        return ctx.render({ text: `Author '${author.name}' was successfully created.`, data: { author } });
+        ctx.render({ text: `Author '${author.name}' was successfully created.`, data: { author } });
     },
+    /**
+     * Update author by id
+     *
+     * @param {Context} ctx
+     */
     async update(ctx) {
         const id = ctx.params.id;
         const { name } = ctx.request.body;
@@ -55,8 +80,13 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Author '${author.name}' was successfully updated.`, data: { author } });
+        ctx.render({ text: `Author '${author.name}' was successfully updated.`, data: { author } });
     },
+    /**
+     * Delete author by id
+     *
+     * @param {Context} ctx
+     */
     async destroy(ctx) {
         const id = ctx.params.id;
         const author = await Author.findOneAndRemove({ _id: id });
@@ -65,6 +95,6 @@ module.exports = {
             throw new NotFoundError('Not found.');
         }
 
-        return ctx.render({ text: `Author '${author.name}' was successfully deleted.` });
+        ctx.render({ text: `Author '${author.name}' was successfully deleted.` });
     },
 };
