@@ -6,6 +6,7 @@ const Book = require('@models/book');
 const Author = require('@models/author');
 const Genre = require('@models/genre');
 const app = require('@root/app/app');
+const FileStorage = require('@services/FileStorage');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
 const BOOKS_URL = '/api/books';
@@ -14,6 +15,7 @@ const USER = { email: 'smith@example.com', password: 'secret' };
 
 beforeAll(async () => {
     await makeConnection();
+    await FileStorage.createStorage('images/books');
 });
 
 describe(`GET ${BOOKS_URL}`, () => {
@@ -21,7 +23,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const limit = 50;
         const books = await Book.find({}, {}, { limit })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}`);
 
@@ -39,7 +41,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const limit = 50;
         const books = await Book.find({}, {}, { limit, skip: offset })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?offset=${offset}`);
 
@@ -65,7 +67,7 @@ describe(`GET ${BOOKS_URL}`, () => {
 
         const books = await Book.find({ title: new RegExp(search, 'i') }, {}, { limit: 50 })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?search=${encodeURIComponent(search)}`);
 
@@ -83,7 +85,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const ids = authors.map(a => a._id);
         const books = await Book.find({ authors: { $in: ids } }, {}, { limit: 50 })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?authors=${ids.join(',')}`);
 
@@ -101,7 +103,7 @@ describe(`GET ${BOOKS_URL}`, () => {
         const ids = genres.map(a => a._id);
         const books = await Book.find({ genres: { $in: ids } }, {}, { limit: 50 })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}?genres=${ids.join(',')}`);
 
@@ -131,7 +133,7 @@ describe(`GET ${BOOKS_URL}/:id`, () => {
         });
         const fetchedBook = await Book.findById(book._id)
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
         const res = await server.get(`${BOOKS_URL}/${book._id}`);
 

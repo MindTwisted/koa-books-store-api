@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const Book = require('@models/book');
 const NotFoundError = require('@errors/NotFoundError');
-const storageService = require('@services/storage/local');
 
 module.exports = {
     /**
@@ -21,7 +20,7 @@ module.exports = {
             { limit: 50, ...offsetClause },
         )
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
 
         ctx.render({ data: { books } });
@@ -35,7 +34,7 @@ module.exports = {
         const id = ctx.params.id;
         const book = await Book.findById(id)
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
 
         if (!book) {
@@ -70,22 +69,16 @@ module.exports = {
      */
     async storeImage(ctx) {
         const id = ctx.params.id;
-        const image = ctx.request.files ? ctx.request.files.image : null;
-        const book = await Book.findOneAndUpdate(
-            { _id: id },
-            {
-                image: await storageService.store(image, {
-                    type: 'image',
-                    folderName: 'books',
-                    fieldName: 'image',
-                }),
-            },
-            { new: true, runValidators: true, context: 'query' },
-        ).populate('authors genres', 'name');
+        const image = ctx.request.files && ctx.request.files.image ? ctx.request.files.image : null;
+        const book = await Book.findById(id).populate('authors genres', 'name');
 
         if (!book) {
             throw new NotFoundError('Not found.');
         }
+
+        book.image = image;
+
+        await book.save();
 
         ctx.render({ text: `Image for book '${book.title}' was successfully updated.`, data: { book } });
     },

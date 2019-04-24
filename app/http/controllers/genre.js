@@ -46,7 +46,7 @@ module.exports = {
         const offsetClause = offset ? { skip: Number(offset) } : {};
         const books = await Book.find({ genres: { $in: [id] } }, {}, { limit: 50, ...offsetClause })
             .populate('authors genres', 'name')
-            .lean()
+            .lean({ virtuals: true })
             .select('title description price discount image');
 
         ctx.render({ data: { books } });

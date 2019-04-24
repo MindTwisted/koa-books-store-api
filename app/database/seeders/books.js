@@ -16,7 +16,6 @@ const seeder = async () => {
                 description: faker.lorem.words(20),
                 price: faker.random.number({ min: 30, max: 100 }),
                 discount: faker.random.number({ min: 0, max: 50 }),
-                image: faker.random.image(),
                 authors: generateUniqueValues(2, () => faker.random.arrayElement(authors)._id),
                 genres: generateUniqueValues(3, () => faker.random.arrayElement(genres)._id),
             };

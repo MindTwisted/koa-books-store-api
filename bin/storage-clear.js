@@ -1,21 +1,28 @@
 require('module-alias/register');
 
 const fs = require('fs');
+const util = require('util');
+const readdir = util.promisify(fs.readdir);
 const inquirer = require('inquirer');
-const storageService = require('@services/storage/local');
+const FileStorage = require('@services/FileStorage');
 const makeConnection = require('@database/connection');
 const Book = require('@models/book');
 
 const clearBookImages = async () => {
-    const books = await Book.find({ image: { $ne: null } });
-    const bookImageNames = books.map(book => book.image.match(/(\w+\.\w+)/)[0]);
-    const folderPath = storageService.getPath(null, 'image', 'books').folderPath;
+    await FileStorage.createStorage('images/books');
 
-    fs.readdirSync(folderPath).map(fileName => {
+    const bookImageStorage = FileStorage.getStorage('images/books');
+    const books = await Book.find({ image: { $ne: null } });
+    const bookImageNames = books.map(book => book.image.name);
+    const folderPath = bookImageStorage.getAbsPath();
+    const folderContent = await readdir(folderPath);
+    const deletePromises = folderContent.map(fileName => {
         if (!bookImageNames.includes(fileName)) {
-            fs.unlinkSync(`${folderPath}/${fileName}`);
+            return bookImageStorage.delete(fileName);
         }
     });
+
+    return Promise.all(deletePromises);
 };
 
 const run = async () => {

@@ -1,5 +1,12 @@
+const fs = require('fs');
+const faker = require('faker');
+const mime = require('mime');
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
+const mongooseLeanVirtuals = require('mongoose-lean-virtuals');
+const FileStorage = require('@services/FileStorage');
+const IMAGE_AVAILABLE_TYPES = ['image/jpeg'];
+const IMAGE_MAX_SIZE = 5242880;
 
 const bookSchema = mongoose.Schema(
     {
@@ -15,8 +22,38 @@ const bookSchema = mongoose.Schema(
             minlength: [20, 'This field should be at least 20 characters long.'],
         },
         image: {
-            type: String,
+            type: Object,
             default: null,
+            validate: [
+                {
+                    validator(v) {
+                        if (!v) {
+                            return true;
+                        }
+
+                        if (!IMAGE_AVAILABLE_TYPES.includes(v.type)) {
+                            return false;
+                        }
+
+                        return true;
+                    },
+                    message: () => `Image must be one of the next types: ${IMAGE_AVAILABLE_TYPES.join(', ')}.`,
+                },
+                {
+                    validator(v) {
+                        if (!v) {
+                            return true;
+                        }
+
+                        if (v.size > IMAGE_MAX_SIZE) {
+                            return false;
+                        }
+
+                        return true;
+                    },
+                    message: () => `Image size must be less than ${IMAGE_MAX_SIZE} bytes.`,
+                },
+            ],
         },
         price: {
             type: Number,
@@ -69,6 +106,7 @@ const bookSchema = mongoose.Schema(
     {
         timestamps: true,
         toJSON: {
+            virtuals: true,
             transform(doc, ret) {
                 delete ret.createdAt;
                 delete ret.updatedAt;
@@ -80,8 +118,37 @@ const bookSchema = mongoose.Schema(
     },
 );
 
+bookSchema.virtual('imagePath').get(function() {
+    if (!this.image) {
+        return null;
+    }
+
+    const bookImageStorage = FileStorage.getStorage('images/books');
+    const imagePath = bookImageStorage.getPublicPath(this.image.name);
+
+    return imagePath;
+});
+
 bookSchema.plugin(uniqueValidator, {
     message: 'This {PATH} is already exists.',
+});
+bookSchema.plugin(mongooseLeanVirtuals);
+
+bookSchema.pre('save', async function() {
+    const image = this.image;
+
+    if (image) {
+        const bookImageStorage = FileStorage.getStorage('images/books');
+        const imageName = `${faker.random.alphaNumeric(20)}.${mime.getExtension(image.type)}`;
+
+        await bookImageStorage.insert(imageName, fs.createReadStream(image.path));
+
+        this.image = {
+            name: imageName,
+            type: image.type,
+            size: image.size,
+        };
+    }
 });
 
 const Book = mongoose.model('book', bookSchema);
