@@ -33,8 +33,9 @@ const userSchema = mongoose.Schema(
         },
         discount: {
             type: Number,
-            min: 0,
-            max: 50,
+            min: [0, 'This field can not be less than 0.'],
+            max: [50, 'This field can not be greater than 50.'],
+            required: [true, 'This field is required.'],
             default: 0,
         },
     },

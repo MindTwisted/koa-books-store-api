@@ -196,3 +196,420 @@ describe(`GET ${USERS_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`PUT ${USERS_URL}/:id`, () => {
+    test('admin user can update user by valid mongodb id and with valid data', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('user');
+        expect(res.body.data.user.name).toEqual(updateName);
+        expect(res.body.data.user.email).toEqual(updateEmail);
+        expect(res.body.data.user.discount).toEqual(updateDiscount);
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with empty name', async done => {
+        const updateName = '';
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with name shorter than 6 chars', async done => {
+        const updateName = faker.random.alphaNumeric(5);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with empty email', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = '';
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with invalid email', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.random.alphaNumeric(10);
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with duplicate email', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = (await User.find({}, {}, { limit: 1 }))[0].email;
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with empty discount', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = '';
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with discount less than 0', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = -1;
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with discount greater than 50', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = 51;
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by valid mongodb id and with discount not numeric', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.alphaNumeric(10);
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('discount');
+
+        done();
+    });
+
+    test('admin user can not update user by non-existent mongodb id and with valid data', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${mongoose.Types.ObjectId()}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update user by invalid mongodb id and with valid data', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${faker.random.alphaNumeric(10)}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not update user by valid mongodb id and with valid data', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const res = await server.put(`${USERS_URL}/${user._id}`).send({
+            name: updateName,
+            email: updateEmail,
+            discount: updateDiscount,
+        });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('not admin user can not update user by valid mongodb id and with valid data', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updateDiscount = faker.random.number({ min: 0, max: 50 });
+        const user = await User.create({
+            name: faker.random.alphaNumeric(6),
+            email: faker.internet.exampleEmail(),
+            password: faker.random.alphaNumeric(6),
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}/${user._id}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                discount: updateDiscount,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});

@@ -35,6 +35,26 @@ module.exports = {
 
         ctx.render({ data: { user } });
     },
+    /**
+     * Update user by id
+     *
+     * @param {Context} ctx
+     */
+    async update(ctx) {
+        const id = ctx.params.id;
+        const { name, email, discount } = ctx.request.body;
+        const user = await User.findOneAndUpdate(
+            { _id: id },
+            { name, email, discount },
+            { new: true, runValidators: true, context: 'query' },
+        );
+
+        if (!user) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ text: `User '${user.name}' was successfully updated.`, data: { user } });
+    },
 
     // TODO: add showOrders
 };
