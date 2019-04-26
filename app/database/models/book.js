@@ -1,6 +1,7 @@
 const fs = require('fs');
 const faker = require('faker');
 const mime = require('mime');
+const validator = require('validator');
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const mongooseLeanVirtuals = require('mongoose-lean-virtuals');
@@ -65,9 +66,14 @@ const bookSchema = mongoose.Schema(
             required: [true, 'This field is required.'],
             min: [0, 'This field can not be less than 0.'],
             max: [50, 'This field can not be greater than 50.'],
+            validate: {
+                validator(v) {
+                    return validator.isInt(String(v));
+                },
+                message: 'This field should be a valid integer.',
+            },
             default: 0,
         },
-        // TODO: add discount integer validation
         authors: [
             {
                 type: mongoose.Schema.Types.ObjectId,
