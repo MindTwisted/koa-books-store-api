@@ -8,6 +8,7 @@ const authorsRouter = require('@routes/authors');
 const genresRouter = require('@routes/genres');
 const booksRouter = require('@routes/books');
 const usersRouter = require('@routes/users');
+const cartRouter = require('@routes/cart');
 
 router.use(jsonView);
 router.use(errorHandleMiddleware);
@@ -18,6 +19,7 @@ router.use(authorsRouter.routes(), authorsRouter.allowedMethods());
 router.use(genresRouter.routes(), genresRouter.allowedMethods());
 router.use(booksRouter.routes(), booksRouter.allowedMethods());
 router.use(usersRouter.routes(), usersRouter.allowedMethods());
+router.use(cartRouter.routes(), cartRouter.allowedMethods());
 
 // TODO: generate api doc
 
