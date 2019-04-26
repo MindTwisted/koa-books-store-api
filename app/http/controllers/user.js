@@ -55,6 +55,24 @@ module.exports = {
 
         ctx.render({ text: `User '${user.name}' was successfully updated.`, data: { user } });
     },
+    /**
+     * Update current user
+     *
+     * @param {Context} ctx
+     */
+    async updateCurrent(ctx) {
+        const id = ctx.state.user._id;
+        const { name, email, password } = ctx.request.body;
+        const user = await User.findById(id);
+
+        user.name = name;
+        user.email = email;
+        user.password = password;
+
+        await user.save();
+
+        ctx.render({ text: `User '${user.name}' was successfully updated.`, data: { user } });
+    },
 
     // TODO: add showOrders
 };

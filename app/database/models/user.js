@@ -38,6 +38,7 @@ const userSchema = mongoose.Schema(
             required: [true, 'This field is required.'],
             default: 0,
         },
+        // TODO: add discount integer validation
     },
     {
         timestamps: true,

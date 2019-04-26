@@ -21,7 +21,7 @@ module.exports = async (ctx, next) => {
         throw new LoginError('Invalid credentials.');
     }
 
-    const token = jwtService.sign({ user });
+    const token = jwtService.sign({ user: { id: user._id } });
 
     ctx.state.user = user;
     ctx.state.token = token;

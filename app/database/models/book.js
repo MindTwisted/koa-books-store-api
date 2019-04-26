@@ -65,7 +65,9 @@ const bookSchema = mongoose.Schema(
             required: [true, 'This field is required.'],
             min: [0, 'This field can not be less than 0.'],
             max: [50, 'This field can not be greater than 50.'],
+            default: 0,
         },
+        // TODO: add discount integer validation
         authors: [
             {
                 type: mongoose.Schema.Types.ObjectId,

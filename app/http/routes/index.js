@@ -19,4 +19,6 @@ router.use(genresRouter.routes(), genresRouter.allowedMethods());
 router.use(booksRouter.routes(), booksRouter.allowedMethods());
 router.use(usersRouter.routes(), usersRouter.allowedMethods());
 
+// TODO: generate api doc
+
 module.exports = router;

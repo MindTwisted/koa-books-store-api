@@ -14,3 +14,6 @@ public.key
 
 # testing
 /coverage
+
+# logs
+/logs

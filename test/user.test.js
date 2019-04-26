@@ -613,3 +613,343 @@ describe(`PUT ${USERS_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`PUT ${USERS_URL}`, () => {
+    test('admin user can update himself with valid data', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(6);
+        const initialUser = await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+            role: 'admin',
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+        const updatedUser = await User.findById(initialUser._id);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('user');
+        expect(res.body.data.user.name).toEqual(updateName);
+        expect(res.body.data.user.email).toEqual(updateEmail);
+        expect(res.body.data.user.role).toEqual('admin');
+        expect(await updatedUser.isValidPassword(initialPassword)).toEqual(false);
+        expect(await updatedUser.isValidPassword(updatePassword)).toEqual(true);
+
+        done();
+    });
+
+    test('not admin user can update himself with valid data', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(6);
+        const initialUser = await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+        const updatedUser = await User.findById(initialUser._id);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('user');
+        expect(res.body.data.user.name).toEqual(updateName);
+        expect(res.body.data.user.email).toEqual(updateEmail);
+        expect(res.body.data.user.role).toEqual('user');
+        expect(await updatedUser.isValidPassword(initialPassword)).toEqual(false);
+        expect(await updatedUser.isValidPassword(updatePassword)).toEqual(true);
+
+        done();
+    });
+
+    test('user can not update himself with empty name', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = '';
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(6);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with name shorter than 6 chars', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(5);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(6);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with empty email', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = '';
+        const updatePassword = faker.random.alphaNumeric(6);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with not valid email', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.random.alphaNumeric(10);
+        const updatePassword = faker.random.alphaNumeric(6);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with duplicate email', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = (await User.find({}, {}, { limit: 1 }))[0].email;
+        const updatePassword = faker.random.alphaNumeric(6);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).toHaveProperty('email');
+        expect(res.body.data.errors).not.toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with empty password', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = '';
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('password');
+
+        done();
+    });
+
+    test('user can not update himself with password shorter than 6 chars', async done => {
+        const initialName = faker.random.alphaNumeric(6);
+        const initialEmail = faker.internet.exampleEmail();
+        const initialPassword = faker.random.alphaNumeric(6);
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(5);
+        await User.create({
+            name: initialName,
+            email: initialEmail,
+            password: initialPassword,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: initialEmail,
+            password: initialPassword,
+        })).body.data.token;
+        const res = await server
+            .put(`${USERS_URL}`)
+            .send({
+                name: updateName,
+                email: updateEmail,
+                password: updatePassword,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).not.toHaveProperty('name');
+        expect(res.body.data.errors).not.toHaveProperty('email');
+        expect(res.body.data.errors).toHaveProperty('password');
+
+        done();
+    });
+
+    test('unauthorized can not update himself', async done => {
+        const updateName = faker.random.alphaNumeric(6);
+        const updateEmail = faker.internet.exampleEmail();
+        const updatePassword = faker.random.alphaNumeric(6);
+        const res = await server.put(`${USERS_URL}`).send({
+            name: updateName,
+            email: updateEmail,
+            password: updatePassword,
+        });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
