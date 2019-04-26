@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon -L --inspect=0.0.0.0 app/server.js",
     "test": "jest --forceExit --detectOpenHandles",
+    "test:coverage": "jest --forceExit --detectOpenHandles --coverage",
     "generate:keys": "node ./bin/generate-keys.js",
     "db:seed": "node ./bin/db-seed.js",
     "db:clear": "node ./bin/db-clear.js",

@@ -11,3 +11,6 @@ public.key
 # public
 /public/storage/*
 !/public/storage/.gitkeep
+
+# testing
+/coverage
