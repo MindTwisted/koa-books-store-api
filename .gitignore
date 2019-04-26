@@ -16,4 +16,5 @@ public.key
 /coverage
 
 # logs
-/logs
+/logs/*
+!/logs/.gitkeep

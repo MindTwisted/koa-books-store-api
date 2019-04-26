@@ -36,9 +36,14 @@ const userSchema = mongoose.Schema(
             min: [0, 'This field can not be less than 0.'],
             max: [50, 'This field can not be greater than 50.'],
             required: [true, 'This field is required.'],
+            validate: {
+                validator(v) {
+                    return validator.isInt(String(v));
+                },
+                message: 'This field should be a valid integer.',
+            },
             default: 0,
         },
-        // TODO: add discount integer validation
     },
     {
         timestamps: true,
