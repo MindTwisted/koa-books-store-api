@@ -74,4 +74,27 @@ module.exports = {
 
         ctx.render({ text: 'Cart was successfully updated.', data: { user, cart } });
     },
+    /**
+     * Delete from current user's cart
+     *
+     * @param {Context} ctx
+     */
+    async destroy(ctx) {
+        const id = ctx.params.id;
+        const user = ctx.state.user;
+        const cart = await Cart.findOneAndRemove({
+            _id: id,
+            user: user._id,
+        })
+            .populate({
+                path: 'book',
+            })
+            .select('count book');
+
+        if (!cart) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ text: `Book '${cart.book.title}' was successfully deleted from cart.` });
+    },
 };

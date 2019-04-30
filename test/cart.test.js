@@ -620,3 +620,129 @@ describe(`PUT ${CART_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`DELETE ${CART_URL}/:id`, () => {
+    test('admin user can delete from own cart with valid id', async done => {
+        const user = await User.findOne({ email: ADMIN_USER.email });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${CART_URL}/${cart._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        const updatedCart = await Cart.find({ user: user._id.toString() });
+        const updatedCartIds = updatedCart.map(cart => cart._id.toString());
+
+        expect(updatedCartIds.includes(cart._id.toString())).toEqual(false);
+
+        done();
+    });
+
+    test('user can delete from own cart with valid id', async done => {
+        const user = await User.findOne({ email: USER.email });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${CART_URL}/${cart._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        const updatedCart = await Cart.find({ user: user._id.toString() });
+        const updatedCartIds = updatedCart.map(cart => cart._id.toString());
+
+        expect(updatedCartIds.includes(cart._id.toString())).toEqual(false);
+
+        done();
+    });
+
+    test('user can not delete from cart of other user', async done => {
+        const user = await User.findOne({ email: ADMIN_USER.email });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${CART_URL}/${cart._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not delete from cart with non-existent mongodb id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${CART_URL}/${mongoose.Types.ObjectId()}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not delete from cart with invalid mongodb id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${CART_URL}/${faker.random.alphaNumeric(10)}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not delete from cart', async done => {
+        const res = await server.delete(`${CART_URL}/${mongoose.Types.ObjectId()}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
