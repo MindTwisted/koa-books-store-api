@@ -1,7 +1,23 @@
 const Cart = require('@models/cart');
-const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
+    /**
+     * Get cart of current user
+     *
+     * @param {Context} ctx
+     */
+    async index(ctx) {
+        const user = ctx.state.user;
+        const cart = await Cart.find({ user: user._id })
+            .populate({
+                path: 'book',
+                populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
+            })
+            .select('-user')
+            .lean();
+
+        ctx.render({ text: `${user.name}'s cart items.`, data: { user, cart } });
+    },
     /**
      * Add book to cart
      *

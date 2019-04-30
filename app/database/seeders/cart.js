@@ -1,4 +1,5 @@
 const faker = require('faker');
+const { generateUniqueValues } = require('@utils');
 const User = require('@models/user');
 const Book = require('@models/book');
 const Cart = require('@models/cart');
@@ -6,13 +7,19 @@ const Cart = require('@models/cart');
 const seeder = async () => {
     const users = await User.find({}).lean();
     const books = await Book.find({}).lean();
+    const uniquePairs = generateUniqueValues(
+        100,
+        () => faker.random.arrayElement(users)._id + '===' + faker.random.arrayElement(books)._id,
+    );
 
     return Cart.create(
-        Array.from(Array(100)).map(() => {
+        uniquePairs.map(pair => {
+            const splitPair = pair.split('===');
+
             return {
                 count: faker.random.number({ min: 1, max: 20 }),
-                user: faker.random.arrayElement(users)._id,
-                book: faker.random.arrayElement(books)._id,
+                user: splitPair[0],
+                book: splitPair[1],
             };
         }),
     );
