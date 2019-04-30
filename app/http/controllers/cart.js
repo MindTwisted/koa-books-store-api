@@ -1,4 +1,5 @@
 const Cart = require('@models/cart');
+const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
     /**
@@ -11,10 +12,11 @@ module.exports = {
         const cart = await Cart.find({ user: user._id })
             .populate({
                 path: 'book',
+                select: 'title description price discount image',
                 populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
             })
-            .select('-user')
-            .lean();
+            .select('count book')
+            .lean({ virtuals: true });
 
         ctx.render({ text: `${user.name}'s cart items.`, data: { user, cart } });
     },
@@ -24,20 +26,52 @@ module.exports = {
      * @param {Context} ctx
      */
     async store(ctx) {
+        const user = ctx.state.user;
         const { count, book } = ctx.request.body;
         const cart = await Cart.create({
             count,
             book,
-            user: ctx.state.user._id,
+            user: user._id,
         });
         const populatedCart = await cart
             .populate({
                 path: 'book',
+                select: 'title description price discount image',
                 populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
             })
-            .populate('user')
             .execPopulate();
 
-        ctx.render({ text: 'Book was successfully added to cart.', data: { cart: populatedCart } });
+        ctx.render({ text: 'Book was successfully added to cart.', data: { user, cart: populatedCart } });
+    },
+    /**
+     * Update current user's cart
+     *
+     * @param {Context} ctx
+     */
+    async update(ctx) {
+        const id = ctx.params.id;
+        const user = ctx.state.user;
+        const { count } = ctx.request.body;
+        const cart = await Cart.findOneAndUpdate(
+            {
+                _id: id,
+                user: user._id,
+            },
+            {
+                count,
+            },
+            { new: true, runValidators: true, context: 'query' },
+        )
+            .populate({
+                path: 'book',
+                populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
+            })
+            .select('count book');
+
+        if (!cart) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ text: 'Cart was successfully updated.', data: { user, cart } });
     },
 };

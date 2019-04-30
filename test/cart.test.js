@@ -22,10 +22,11 @@ describe(`GET ${CART_URL}`, () => {
         const cart = await Cart.find({ user: user._id })
             .populate({
                 path: 'book',
+                select: 'title description price discount image',
                 populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
             })
-            .select('-user')
-            .lean();
+            .select('count book')
+            .lean({ virtuals: true });
         const token = (await server.put(`${AUTH_URL}`).send({
             email: ADMIN_USER.email,
             password: ADMIN_USER.password,
@@ -47,10 +48,11 @@ describe(`GET ${CART_URL}`, () => {
         const cart = await Cart.find({ user: user._id })
             .populate({
                 path: 'book',
+                select: 'title description price discount image',
                 populate: [{ path: 'authors', select: 'name' }, { path: 'genres', select: 'name' }],
             })
-            .select('-user')
-            .lean();
+            .select('count book')
+            .lean({ virtuals: true });
         const token = (await server.put(`${AUTH_URL}`).send({
             email: USER.email,
             password: USER.password,
@@ -79,6 +81,7 @@ describe(`GET ${CART_URL}`, () => {
 
 describe(`POST ${CART_URL}`, () => {
     test('admin user can add book to cart with valid data provided', async done => {
+        const user = await User.findOne({ email: ADMIN_USER.email });
         const count = faker.random.number({ min: 1, max: 100 });
         const book = await Book.create({
             title: faker.lorem.words(6),
@@ -101,14 +104,16 @@ describe(`POST ${CART_URL}`, () => {
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
         expect(res.body.data).toHaveProperty('cart');
+        expect(res.body.data).toHaveProperty('user');
         expect(res.body.data.cart.count).toEqual(count);
         expect(res.body.data.cart.book._id).toEqual(book._id.toString());
-        expect(res.body.data.cart.user.email).toEqual(ADMIN_USER.email);
+        expect(res.body.data.user).toEqual(JSON.parse(JSON.stringify(user)));
 
         done();
     });
 
     test('user can add book to cart with valid data provided', async done => {
+        const user = await User.findOne({ email: USER.email });
         const count = faker.random.number({ min: 1, max: 100 });
         const book = await Book.create({
             title: faker.lorem.words(6),
@@ -131,9 +136,10 @@ describe(`POST ${CART_URL}`, () => {
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
         expect(res.body.data).toHaveProperty('cart');
+        expect(res.body.data).toHaveProperty('user');
         expect(res.body.data.cart.count).toEqual(count);
         expect(res.body.data.cart.book._id).toEqual(book._id.toString());
-        expect(res.body.data.cart.user.email).toEqual(USER.email);
+        expect(res.body.data.user).toEqual(JSON.parse(JSON.stringify(user)));
 
         done();
     });
@@ -324,6 +330,7 @@ describe(`POST ${CART_URL}`, () => {
     });
 
     test('user can not add book to cart with duplicate book id', async done => {
+        const user = await User.findOne({ email: USER.email });
         const count = faker.random.number({ min: 1, max: 99 });
         const book = await Book.create({
             title: faker.lorem.words(6),
@@ -346,9 +353,10 @@ describe(`POST ${CART_URL}`, () => {
         expect(res.status).toEqual(200);
         expect(res.body.status).toBe('success');
         expect(res.body.data).toHaveProperty('cart');
+        expect(res.body.data).toHaveProperty('user');
         expect(res.body.data.cart.count).toEqual(count);
         expect(res.body.data.cart.book._id).toEqual(book._id.toString());
-        expect(res.body.data.cart.user.email).toEqual(USER.email);
+        expect(res.body.data.user).toEqual(JSON.parse(JSON.stringify(user)));
 
         const resDuplicate = await server
             .post(`${CART_URL}`)
@@ -379,6 +387,231 @@ describe(`POST ${CART_URL}`, () => {
         const res = await server.post(`${CART_URL}`).send({
             count,
             book: book._id,
+        });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
+describe(`PUT ${CART_URL}/:id`, () => {
+    test('admin user can update own cart with valid data provided and with valid id', async done => {
+        const user = await User.findOne({ email: ADMIN_USER.email });
+        const count = faker.random.number({ min: 1, max: 100 });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${cart._id}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('cart');
+        expect(res.body.data).toHaveProperty('user');
+        expect(res.body.data.cart.count).toEqual(count);
+        expect(res.body.data.cart.book._id).toEqual(book._id.toString());
+        expect(res.body.data.user).toEqual(JSON.parse(JSON.stringify(user)));
+
+        done();
+    });
+
+    test('user can update own cart with valid data provided and with valid id', async done => {
+        const user = await User.findOne({ email: USER.email });
+        const count = faker.random.number({ min: 1, max: 100 });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${cart._id}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('cart');
+        expect(res.body.data).toHaveProperty('user');
+        expect(res.body.data.cart.count).toEqual(count);
+        expect(res.body.data.cart.book._id).toEqual(book._id.toString());
+        expect(res.body.data.user).toEqual(JSON.parse(JSON.stringify(user)));
+
+        done();
+    });
+
+    test('user can not update own cart with empty count', async done => {
+        const user = await User.findOne({ email: USER.email });
+        const count = '';
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${cart._id}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('count');
+        expect(res.body.data.errors).not.toHaveProperty('user');
+        expect(res.body.data.errors).not.toHaveProperty('book');
+
+        done();
+    });
+
+    test('user can not update own cart with count less than 1', async done => {
+        const user = await User.findOne({ email: USER.email });
+        const count = faker.random.number({ min: -100, max: 0 });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${cart._id}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+        expect(res.body.data).toHaveProperty('errors');
+        expect(res.body.data.errors).toHaveProperty('count');
+        expect(res.body.data.errors).not.toHaveProperty('user');
+        expect(res.body.data.errors).not.toHaveProperty('book');
+
+        done();
+    });
+
+    test('user can not update cart of other user', async done => {
+        const user = await User.findOne({ email: ADMIN_USER.email });
+        const count = faker.random.number({ min: 10, max: 100 });
+        const book = await Book.create({
+            title: faker.lorem.words(6),
+            description: faker.lorem.words(20),
+            price: faker.random.number({ min: 30, max: 100 }),
+            discount: faker.random.number({ min: 0, max: 50 }),
+        });
+        const cart = await Cart.create({
+            count: faker.random.number({ min: 200, max: 300 }),
+            book: book._id,
+            user: user._id,
+        });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${cart._id}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not update cart by non-existent mongodb id', async done => {
+        const count = faker.random.number({ min: 10, max: 100 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${mongoose.Types.ObjectId()}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not update cart by invalid mongodb id', async done => {
+        const count = faker.random.number({ min: 10, max: 100 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${CART_URL}/${faker.random.alphaNumeric(10)}`)
+            .send({
+                count,
+            })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not update cart', async done => {
+        const count = faker.random.number({ min: 10, max: 100 });
+        const res = await server.put(`${CART_URL}/${mongoose.Types.ObjectId()}`).send({
+            count,
         });
 
         expect(res.status).toEqual(401);

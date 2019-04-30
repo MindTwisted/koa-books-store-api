@@ -55,6 +55,7 @@ const cartSchema = mongoose.Schema(
         timestamps: true,
         toJSON: {
             transform(doc, ret) {
+                delete ret.user;
                 delete ret.createdAt;
                 delete ret.updatedAt;
                 delete ret.__v;
