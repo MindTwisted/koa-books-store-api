@@ -51,6 +51,7 @@ const cartSchema = mongoose.Schema(
         },
     },
     {
+        collection: 'cart',
         timestamps: true,
         toJSON: {
             transform(doc, ret) {
