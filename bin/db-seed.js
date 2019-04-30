@@ -28,6 +28,7 @@ const run = async () => {
         await seeder.genreSeeder();
         await seeder.bookSeeder();
         await seeder.cartSeeder();
+        await seeder.paymentTypeSeeder();
 
         // eslint-disable-next-line no-console
         console.log('Database was seeded.');

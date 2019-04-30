@@ -5,6 +5,7 @@ const Author = require('@models/author');
 const Genre = require('@models/genre');
 const Book = require('@models/book');
 const Cart = require('@models/cart');
+const PaymentType = require('@models/paymentType');
 
 const connect = () => {
     return mongoose.connect(`mongodb://${config.DB_HOST}:${config.DB_PORT}`, {
@@ -18,7 +19,7 @@ const connect = () => {
 const makeConnection = async () => {
     const connection = await connect();
 
-    await Promise.all([User.init(), Author.init(), Genre.init(), Book.init(), Cart.init()]);
+    await Promise.all([User.init(), Author.init(), Genre.init(), Book.init(), Cart.init(), PaymentType.init()]);
 
     return connection;
 };
