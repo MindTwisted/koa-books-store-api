@@ -121,6 +121,81 @@ describe(`GET ${ORDERS_URL}`, () => {
     });
 });
 
+describe(`GET ${ORDERS_URL}/current`, () => {
+    test('admin user can get own orders', async done => {
+        const limit = 50;
+        const user = await User.findOne({ email: ADMIN_USER.email }).lean();
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50 })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details');
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.get(`${ORDERS_URL}/current`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('orders');
+        expect(res.body.data.orders.length).toBeLessThanOrEqual(limit);
+        expect(res.body.data.orders).toEqual(JSON.parse(JSON.stringify(orders)));
+
+        done();
+    });
+
+    test('user can get own orders', async done => {
+        const limit = 50;
+        const user = await User.findOne({ email: USER.email }).lean();
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50 })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details');
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.get(`${ORDERS_URL}/current`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('orders');
+        expect(res.body.data.orders.length).toBeLessThanOrEqual(limit);
+        expect(res.body.data.orders).toEqual(JSON.parse(JSON.stringify(orders)));
+
+        done();
+    });
+
+    test('user can get own orders shifted by offset', async done => {
+        const offset = faker.random.number({ min: 1, max: 10 });
+        const limit = 50;
+        const user = await User.findOne({ email: USER.email }).lean();
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50, skip: offset })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details');
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.get(`${ORDERS_URL}/current?offset=${offset}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('orders');
+        expect(res.body.data.orders.length).toBeLessThanOrEqual(limit);
+        expect(res.body.data.orders).toEqual(JSON.parse(JSON.stringify(orders)));
+
+        done();
+    });
+
+    test('unauthorized can not get own orders', async done => {
+        const res = await server.get(`${ORDERS_URL}/current`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
 describe(`POST ${ORDERS_URL}`, () => {
     test('admin user can create order with valid payment type and non-empty cart', async done => {
         const count = faker.random.number({ min: 1, max: 100 });

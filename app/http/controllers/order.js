@@ -19,6 +19,22 @@ module.exports = {
         ctx.render({ data: { orders } });
     },
     /**
+     * Get all orders of current user
+     *
+     * @param {Context} ctx
+     */
+    async indexCurrent(ctx) {
+        const user = ctx.state.user;
+        const { offset } = ctx.request.query;
+        const offsetClause = offset ? { skip: Number(offset) } : {};
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50, ...offsetClause })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details')
+            .lean();
+
+        ctx.render({ data: { orders } });
+    },
+    /**
      * Create new order
      *
      * @param {Context} ctx
