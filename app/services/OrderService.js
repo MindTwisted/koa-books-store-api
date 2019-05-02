@@ -28,9 +28,11 @@ const calculateTotals = (cart, user) => {
             userDiscountPercent + bookDiscountPercent > 50 ? 50 : userDiscountPercent + bookDiscountPercent;
         const bookDiscount = bookFullPrice * (totalDiscountPercent / 100);
         const bookPriceWithDiscount = bookFullPrice - bookDiscount;
+        const finalPrice = bookPriceWithDiscount * booksCount;
+        const finalDiscount = bookDiscount * booksCount;
 
-        totals.price += Number((bookPriceWithDiscount * booksCount).toFixed(2));
-        totals.discount += Number((bookDiscount * booksCount).toFixed(2));
+        totals.price += finalPrice;
+        totals.discount += finalDiscount;
         totals.details.books.push({
             title: item.book.title,
             price: item.book.price,
@@ -38,6 +40,9 @@ const calculateTotals = (cart, user) => {
             count: booksCount,
         });
     });
+
+    totals.price = Number(totals.price.toFixed(2));
+    totals.discount = Number(totals.discount.toFixed(2));
 
     return totals;
 };
