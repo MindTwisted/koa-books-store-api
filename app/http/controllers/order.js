@@ -1,6 +1,23 @@
+const Order = require('@models/order');
 const OrderService = require('@services/OrderService');
 
 module.exports = {
+    /**
+     * Get all orders
+     *
+     * @param {Context} ctx
+     */
+    async index(ctx) {
+        const { offset, user } = ctx.request.query;
+        const userClause = user ? { user } : {};
+        const offsetClause = offset ? { skip: Number(offset) } : {};
+        const orders = await Order.find({ ...userClause }, {}, { limit: 50, ...offsetClause })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details')
+            .lean();
+
+        ctx.render({ data: { orders } });
+    },
     /**
      * Create new order
      *

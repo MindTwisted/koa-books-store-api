@@ -86,6 +86,7 @@ const orderSchema = mongoose.Schema(
             },
             books: [
                 {
+                    _id: false,
                     title: {
                         type: String,
                         required: [true, 'This field is required.'],
