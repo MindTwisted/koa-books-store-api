@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const makeConnection = require('@database/connection');
 const User = require('@models/user');
+const Order = require('@models/order');
 const app = require('@root/app/app');
 const server = supertest.agent(app.callback());
 const AUTH_URL = '/api/auth';
@@ -191,6 +192,90 @@ describe(`GET ${USERS_URL}/:id`, () => {
         const res = await server.get(`${USERS_URL}/${user._id}`).set('Authorization', `Bearer ${token}`);
 
         expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
+
+describe(`GET ${USERS_URL}/:id/orders`, () => {
+    test('admin user can get orders of user by id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const user = await User.findOne().lean();
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50 })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details')
+            .lean();
+        const res = await server.get(`${USERS_URL}/${user._id}/orders`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('orders');
+        expect(res.body.data.orders).toEqual(JSON.parse(JSON.stringify(orders)));
+
+        done();
+    });
+
+    test('admin user can get orders of user by id with offset', async done => {
+        const offset = faker.random.number({ min: 1, max: 10 });
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const user = await User.findOne().lean();
+        const orders = await Order.find({ user: user._id }, {}, { limit: 50, skip: offset })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details')
+            .lean();
+        const res = await server
+            .get(`${USERS_URL}/${user._id}/orders?offset=${offset}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('orders');
+        expect(res.body.data.orders).toEqual(JSON.parse(JSON.stringify(orders)));
+
+        done();
+    });
+
+    test('admin user can not get orders of user by invalid id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .get(`${USERS_URL}/${faker.random.alphaNumeric(10)}/orders`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not get orders of user by id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const user = await User.findOne().lean();
+        const res = await server.get(`${USERS_URL}/${user._id}/orders`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not get orders of user by id', async done => {
+        const user = await User.findOne().lean();
+        const res = await server.get(`${USERS_URL}/${user._id}/orders`);
+
+        expect(res.status).toEqual(401);
         expect(res.body.status).toBe('failed');
 
         done();

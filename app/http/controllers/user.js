@@ -1,4 +1,5 @@
 const User = require('@models/user');
+const Order = require('@models/order');
 const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
@@ -34,6 +35,22 @@ module.exports = {
         }
 
         ctx.render({ data: { user } });
+    },
+    /**
+     * Get user's orders
+     *
+     * @param {Context} ctx
+     */
+    async showOrders(ctx) {
+        const id = ctx.params.id;
+        const { offset } = ctx.request.query;
+        const offsetClause = offset ? { skip: Number(offset) } : {};
+        const orders = await Order.find({ user: id }, {}, { limit: 50, ...offsetClause })
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details')
+            .lean();
+
+        ctx.render({ data: { orders } });
     },
     /**
      * Update user by id
@@ -73,6 +90,4 @@ module.exports = {
 
         ctx.render({ text: `User '${user.name}' was successfully updated.`, data: { user } });
     },
-
-    // TODO: add showOrders
 };
