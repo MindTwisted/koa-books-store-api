@@ -1,5 +1,6 @@
 const Order = require('@models/order');
 const OrderService = require('@services/OrderService');
+const NotFoundError = require('@errors/NotFoundError');
 
 module.exports = {
     /**
@@ -46,5 +47,27 @@ module.exports = {
         const order = await orderService.save();
 
         ctx.render({ text: 'Order was successfully created.', data: { order } });
+    },
+    /**
+     * Update order
+     *
+     * @param {Context} ctx
+     */
+    async update(ctx) {
+        const id = ctx.params.id;
+        const { status } = ctx.request.body;
+        const order = await Order.findOneAndUpdate(
+            { _id: id },
+            { status },
+            { new: true, runValidators: true, context: 'query' },
+        )
+            .populate('paymentType', 'name')
+            .select('status totalDiscount totalPrice details');
+
+        if (!order) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ text: 'Order was successfully updated.', data: { order } });
     },
 };

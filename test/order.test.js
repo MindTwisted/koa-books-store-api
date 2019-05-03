@@ -380,3 +380,111 @@ describe(`POST ${ORDERS_URL}`, () => {
         done();
     });
 });
+
+describe(`PUT ${ORDERS_URL}/:id`, () => {
+    test('admin user can update order with valid status and id', async done => {
+        const validValues = ['in_progress', 'done'];
+        const value = faker.random.arrayElement(validValues);
+        const order = await Order.findOne();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${ORDERS_URL}/${order._id}`)
+            .send({ status: value })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+        expect(res.body.data).toHaveProperty('order');
+        expect(res.body.data.order.status).toEqual(value);
+
+        done();
+    });
+
+    test('admin user can not update order with invalid status', async done => {
+        const value = faker.random.alphaNumeric(10);
+        const order = await Order.findOne();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${ORDERS_URL}/${order._id}`)
+            .send({ status: value })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update order with non-existent id', async done => {
+        const validValues = ['in_progress', 'done'];
+        const value = faker.random.arrayElement(validValues);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${ORDERS_URL}/${mongoose.Types.ObjectId()}`)
+            .send({ status: value })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not update order with invalid id', async done => {
+        const validValues = ['in_progress', 'done'];
+        const value = faker.random.arrayElement(validValues);
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${ORDERS_URL}/${faker.random.alphaNumeric(10)}`)
+            .send({ status: value })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not update order with valid status and id', async done => {
+        const validValues = ['in_progress', 'done'];
+        const value = faker.random.arrayElement(validValues);
+        const order = await Order.findOne();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server
+            .put(`${ORDERS_URL}/${order._id}`)
+            .send({ status: value })
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not update order with valid status and id', async done => {
+        const validValues = ['in_progress', 'done'];
+        const value = faker.random.arrayElement(validValues);
+        const order = await Order.findOne();
+        const res = await server.put(`${ORDERS_URL}/${order._id}`).send({ status: value });
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
