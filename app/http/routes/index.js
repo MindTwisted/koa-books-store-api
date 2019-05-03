@@ -25,6 +25,4 @@ router.use(cartRouter.routes(), cartRouter.allowedMethods());
 router.use(paymentTypesRouter.routes(), paymentTypesRouter.allowedMethods());
 router.use(ordersRouter.routes(), ordersRouter.allowedMethods());
 
-// TODO: generate api doc
-
 module.exports = router;

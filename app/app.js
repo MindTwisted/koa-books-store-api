@@ -15,6 +15,4 @@ app.use(async ctx => {
     await send(ctx, ctx.path, { root: __dirname + '/../public' });
 });
 
-// TODO: add readme with install app guide and code tests coverage badge
-
 module.exports = app;
