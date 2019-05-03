@@ -8,5 +8,6 @@ router.get('/', isLoggedInMiddleware, isAdminMiddleware, orderController.index);
 router.get('/current', isLoggedInMiddleware, orderController.indexCurrent);
 router.post('/', isLoggedInMiddleware, orderController.store);
 router.put('/:id', isLoggedInMiddleware, isAdminMiddleware, orderController.update);
+router.delete('/:id', isLoggedInMiddleware, isAdminMiddleware, orderController.destroy);
 
 module.exports = router;

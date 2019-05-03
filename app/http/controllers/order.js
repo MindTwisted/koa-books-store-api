@@ -70,4 +70,19 @@ module.exports = {
 
         ctx.render({ text: 'Order was successfully updated.', data: { order } });
     },
+    /**
+     * Delete order
+     *
+     * @param {Context} ctx
+     */
+    async destroy(ctx) {
+        const id = ctx.params.id;
+        const order = await Order.findOneAndRemove({ _id: id });
+
+        if (!order) {
+            throw new NotFoundError('Not found.');
+        }
+
+        ctx.render({ text: 'Order was successfully deleted.' });
+    },
 };

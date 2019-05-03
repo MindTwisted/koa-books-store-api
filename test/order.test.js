@@ -488,3 +488,77 @@ describe(`PUT ${ORDERS_URL}/:id`, () => {
         done();
     });
 });
+
+describe(`DELETE ${ORDERS_URL}/:id`, () => {
+    test('admin user can delete order with valid id', async done => {
+        const order = await Order.findOne();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${ORDERS_URL}/${order._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(200);
+        expect(res.body.status).toBe('success');
+
+        const deletedOrder = await Order.findById(order._id);
+
+        expect(deletedOrder).toBeFalsy();
+
+        done();
+    });
+
+    test('admin user can not delete order with non-existent id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${ORDERS_URL}/${mongoose.Types.ObjectId()}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(404);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('admin user can not delete order with invalid id', async done => {
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: ADMIN_USER.email,
+            password: ADMIN_USER.password,
+        })).body.data.token;
+        const res = await server
+            .delete(`${ORDERS_URL}/${faker.random.alphaNumeric(10)}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(422);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('user can not delete order with valid id', async done => {
+        const order = await Order.findOne();
+        const token = (await server.put(`${AUTH_URL}`).send({
+            email: USER.email,
+            password: USER.password,
+        })).body.data.token;
+        const res = await server.delete(`${ORDERS_URL}/${order._id}`).set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toEqual(403);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+
+    test('unauthorized can not delete order with valid id', async done => {
+        const order = await Order.findOne();
+        const res = await server.delete(`${ORDERS_URL}/${order._id}`);
+
+        expect(res.status).toEqual(401);
+        expect(res.body.status).toBe('failed');
+
+        done();
+    });
+});
