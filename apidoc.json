@@ -1,0 +1,6 @@
+{
+    "name": "Books Store",
+    "version": "1.0.0",
+    "description": "NodeJS REST API application based on Koa and Mongoose.",
+    "title": "Books store api documentation"
+}
