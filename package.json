@@ -12,11 +12,13 @@
     "db:clear": "node ./bin/db-clear.js",
     "storage:clear": "node ./bin/storage-clear.js",
     "lint": "./node_modules/.bin/eslint ./app/**/* ./test/**/* ./bin/**/*",
-    "lint:fix": "./node_modules/.bin/eslint ./app/**/* ./test/**/* ./bin/**/* --fix"
+    "lint:fix": "./node_modules/.bin/eslint ./app/**/* ./test/**/* ./bin/**/* --fix",
+    "apidoc": "./node_modules/.bin/apidoc -i app/ -o apidoc/"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "apidoc": "^0.17.7",
     "bcrypt": "^3.0.5",
     "dotenv": "^7.0.0",
     "eslint": "^5.16.0",
